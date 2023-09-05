@@ -1,0 +1,1 @@
+export type Job<R, A extends Array<any>> = (...args: A) => Promise<R>;
