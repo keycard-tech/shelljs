@@ -21,16 +21,14 @@ import type Transport from "./transport";
 import { log } from "./logs";
 import { decodeTxInfo, splitPath } from "./utils";
 import { EthAppPleaseEnableContractData } from "./errors";
-import { signEIP712HashedMessage, signEIP712Message } from "./eip712";
-import { EIP712Message } from "./types/eip712-types";
+import { signEIP712Message } from "./eip712";
+import { json } from "stream/consumers";
 
 export * from "./utils";
 
 const remapTransactionRelatedErrors = (e: any) => {
   if (e && e.statusCode === 0x6a80) {
-    return new EthAppPleaseEnableContractData(
-      "Please enable Blind signing or Contract data in the Ethereum app Settings",
-    );
+    return new EthAppPleaseEnableContractData( "Please enable Blind signing or Contract data in the Ethereum app Settings");
   }
 
   return e;
@@ -60,7 +58,7 @@ export default class Eth {
    * @example
    * eth.getAddress("44'/60'/0'/0/0").then(o => o.address)
    */
-  getAddress(path: string, boolDisplay?: boolean, boolChaincode?: boolean): Promise<{ publicKey: string; address: string; chainCode?: string }> {
+  async getAddress(path: string, boolDisplay?: boolean, boolChaincode?: boolean): Promise<{ publicKey: string; address: string; chainCode?: string }> {
     const paths = splitPath(path);
     const buffer = Buffer.alloc(1 + paths.length * 4);
 
@@ -69,29 +67,21 @@ export default class Eth {
     paths.forEach((element, index) => {
       buffer.writeUInt32BE(element, 1 + 4 * index);
     });
-    return this.transport
-      .send(0xe0, 0x02, boolDisplay ? 0x01 : 0x00, boolChaincode ? 0x01 : 0x00, buffer)
-      .then((response: any) => {
-        const publicKeyLength = response[0];
-        const addressLength = response[1 + publicKeyLength];
 
-        return {
-          publicKey: response.slice(1, 1 + publicKeyLength).toString("hex"),
-          address:
-            "0x" +
-            response
-              .slice(1 + publicKeyLength + 1, 1 + publicKeyLength + 1 + addressLength)
-              .toString("ascii"),
-          chainCode: boolChaincode
-            ? response
-                .slice(
-                  1 + publicKeyLength + 1 + addressLength,
-                  1 + publicKeyLength + 1 + addressLength + 32,
-                )
-                .toString("hex")
-            : undefined,
-        };
-      });
+    try {
+      let response = await this.transport.send(0xe0, 0x02, boolDisplay ? 0x01 : 0x00, boolChaincode ? 0x01 : 0x00, buffer);
+    const publicKeyLength = response[0];
+    const addressLength = response[1 + publicKeyLength];
+
+    return {
+      publicKey: response.subarray(1, 1 + publicKeyLength).toString("hex"),
+      address: "0x" + response.subarray(1 + publicKeyLength + 1, 1 + publicKeyLength + 1 + addressLength).toString("ascii"),
+      chainCode: boolChaincode ? response.subarray(1 + publicKeyLength + 1 + addressLength, 1 + publicKeyLength + 1 + addressLength + 32).toString("hex") : undefined
+    };
+    } catch (error) {
+      log("error", "Couldn't get address", error);
+      throw error;
+    }
   }
 
   /**
@@ -110,10 +100,11 @@ export default class Eth {
   async signTransaction(path: string, rawTxHex: string): Promise<{s: string; v: string;  r: string;}> {
     const rawTx = Buffer.from(rawTxHex, "hex");
     const { vrsOffset, txType, chainId, chainIdTruncated } = decodeTxInfo(rawTx);
-
     const paths = splitPath(path);
+
     let response: any;
     let offset = 0;
+
     while (offset !== rawTx.length) {
       const first = offset === 0;
       const maxChunkSize = first ? 150 - 1 - paths.length * 4 : 150;
@@ -136,21 +127,19 @@ export default class Eth {
         rawTx.copy(buffer, 0, offset, offset + chunkSize);
       }
 
-      response = await this.transport
-        .send(0xe0, 0x04, first ? 0x00 : 0x80, 0x00, buffer)
-        .catch((e: any) => {
-          throw remapTransactionRelatedErrors(e);
-        });
+      response = await this.transport.send(0xe0, 0x04, first ? 0x00 : 0x80, 0x00, buffer).catch((e: any) => {
+        throw remapTransactionRelatedErrors(e);
+      });
 
       offset += chunkSize;
     }
 
     const response_byte: number = response[0];
+
     let v = "";
 
     if (chainId.times(2).plus(35).plus(1).isGreaterThan(255)) {
       const oneByteChainId = (chainIdTruncated * 2 + 35) % 256;
-
       const ecc_parity = Math.abs(response_byte - oneByteChainId);
 
       if (txType != null) {
@@ -164,13 +153,14 @@ export default class Eth {
       v = response_byte.toString(16);
     }
 
-    // Make sure v has is prefixed with a 0 if its length is odd ("1" -> "01").
+    // Make sure v is prefixed with a 0 if its length is odd ("1" -> "01").
     if (v.length % 2 == 1) {
       v = "0" + v;
     }
 
     const r = response.slice(1, 1 + 32).toString("hex");
     const s = response.slice(1 + 32, 1 + 32 + 32).toString("hex");
+
     return { v, r, s };
   }
 
@@ -206,23 +196,15 @@ export default class Eth {
   console.log("Signature 0x" + result['r'] + result['s'] + v);
   })
    */
-  async signPersonalMessage(
-    path: string,
-    messageHex: string,
-  ): Promise<{
-    v: number;
-    s: string;
-    r: string;
-  }> {
+  async signPersonalMessage(path: string, messageHex: string): Promise<{ v: number; s: string; r: string; }> {
     const paths = splitPath(path);
-    let offset = 0;
     const message = Buffer.from(messageHex, "hex");
+    let offset = 0;
     let response: any;
 
     while (offset !== message.length) {
       const maxChunkSize = offset === 0 ? 150 - 1 - paths.length * 4 - 4 : 150;
-      const chunkSize =
-        offset + maxChunkSize > message.length ? message.length - offset : maxChunkSize;
+      const chunkSize = offset + maxChunkSize > message.length ? message.length - offset : maxChunkSize;
       const buffer = Buffer.alloc(offset === 0 ? 1 + paths.length * 4 + 4 + chunkSize : chunkSize);
 
       if (offset === 0) {
@@ -244,31 +226,8 @@ export default class Eth {
     const v = response[0];
     const r = response.slice(1, 1 + 32).toString("hex");
     const s = response.slice(1 + 32, 1 + 32 + 32).toString("hex");
-    return { v, r, s };
-  }
 
-  /**
-  * Sign a prepared message following web3.eth.signTypedData specification. The host computes the domain separator and hashStruct(message)
-  * @example
-  eth.signEIP712HashedMessage("44'/60'/0'/0/0", Buffer.from("0101010101010101010101010101010101010101010101010101010101010101").toString("hex"), Buffer.from("0202020202020202020202020202020202020202020202020202020202020202").toString("hex")).then(result => {
-  var v = result['v'] - 27;
-  v = v.toString(16);
-  if (v.length < 2) {
-    v = "0" + v;
-  }
-  console.log("Signature 0x" + result['r'] + result['s'] + v);
-  })
-   */
-  signEIP712HashedMessage(
-    path: string,
-    domainSeparatorHex: string,
-    hashStructMessageHex: string,
-  ): Promise<{
-    v: number;
-    s: string;
-    r: string;
-  }> {
-    return signEIP712HashedMessage(this.transport, path, domainSeparatorHex, hashStructMessageHex);
+    return { v, r, s };
   }
 
   /**
@@ -303,16 +262,9 @@ export default class Eth {
    * @param {Boolean} fullImplem use the legacy implementation
    * @returns {Promise}
    */
-  async signEIP712Message(
-    path: string,
-    jsonMessage: EIP712Message,
-    fullImplem = false,
-  ): Promise<{
-    v: number;
-    s: string;
-    r: string;
-  }> {
-    return new Promise(() => {});
+  async signEIP712Message( path: string, jsonMessage: Object, fullImplem = false): Promise<{ v: number; s: string; r: string; }> {
+    const messageStr = JSON.stringify(jsonMessage);
+    return signEIP712Message(this.transport, path, messageStr, fullImplem);
   }
 
   /**
@@ -329,22 +281,18 @@ export default class Eth {
       LC = 0x00,
     }
 
-    return this.transport
-      .send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1, APDU_FIELDS.P2)
-      .then((res: any) => {
-        const [, fourBytesChallenge, statusCode] =
-          new RegExp("(.*)(.{4}$)").exec(res.toString("hex")) || [];
+    try {
+      let response = await this.transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1, APDU_FIELDS.P2);
+      const [fourBytesChallenge, statusCode] = new RegExp("(.*)(.{4}$)").exec(response.toString("hex")) || [];
 
-        if (statusCode !== "9000") {
-          throw new Error(
-            `An error happened while generating the challenge. Status code: ${statusCode}`,
-          );
-        }
-        return `0x${fourBytesChallenge}`;
-      })
-      .catch((e: any) => {
-        log("error", "couldn't request a challenge", e);
-        throw e;
-      });
+      if (statusCode !== "9000") {
+        throw new Error(`An error happened while generating the challenge. Status code: ${statusCode}`);
+      }
+
+      return `0x${fourBytesChallenge}`;
+    } catch (error) {
+      log("error", "Couldn't request a challenge", error);
+      throw error;
+    }
   }
 }
