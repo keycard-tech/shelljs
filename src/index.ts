@@ -1,7 +1,6 @@
 import Eth from "./eth"
 import Transport from "./transport"
 import { KProDevice } from "./device"
-import * as EIP712 from "./eip712"
 import * as KProError from "./errors"
 import * as KProErrorHelpers from "./error-helpers"
 import * as HIDFraming from "./hid-framing"
@@ -19,7 +18,6 @@ import type * as TransportTypes from "./types/transport-types"
 export let KProJS = {
   Eth: Eth,
   KProDevice: KProDevice,
-  EIP712: EIP712,
   KProError: KProError,
   KProErrorHelpers: KProErrorHelpers,
   HIDFraming: HIDFraming,

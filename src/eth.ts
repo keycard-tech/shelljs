@@ -1,6 +1,6 @@
 /********************************************************************************
- *   KPro Node JS API
- *   (c) 2016-2017 KPro
+ *   Ledger Node JS API
+ *   (c) 2016-2017 Ledger
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import type Transport from "./transport";
 import { log } from "./logs";
 import { decodeTxInfo, splitPath } from "./utils";
 import { EthAppPleaseEnableContractData } from "./errors";
-import { signEIP712Message } from "./eip712";
-import { json } from "stream/consumers";
 
 export * from "./utils";
 
@@ -184,21 +182,9 @@ export default class Eth {
     });
   }
 
-  /**
-  * You can sign a message according to eth_sign RPC call and retrieve v, r, s given the message and the BIP 32 path of the account to sign.
-  * @example
-  eth.signPersonalMessage("44'/60'/0'/0/0", Buffer.from("test").toString("hex")).then(result => {
-  var v = result['v'] - 27;
-  v = v.toString(16);
-  if (v.length < 2) {
-    v = "0" + v;
-  }
-  console.log("Signature 0x" + result['r'] + result['s'] + v);
-  })
-   */
-  async signPersonalMessage(path: string, messageHex: string): Promise<{ v: number; s: string; r: string; }> {
+  private async sendChunks(path: string, m: string, cla: number, ins: number, p2: number, enc: string) : Promise<{ v: number; s: string; r: string; }> {
     const paths = splitPath(path);
-    const message = Buffer.from(messageHex, "hex");
+    const message = Buffer.from(m, enc as BufferEncoding);
     let offset = 0;
     let response: any;
 
@@ -218,7 +204,7 @@ export default class Eth {
         message.copy(buffer, 0, offset, offset + chunkSize);
       }
 
-      response = await this.transport.send(0xe0, 0x08, offset === 0 ? 0x00 : 0x80, 0x00, buffer);
+      response = await this.transport.send(cla, ins, offset === 0 ? 0x00 : 0x80, p2, buffer);
 
       offset += chunkSize;
     }
@@ -228,6 +214,22 @@ export default class Eth {
     const s = response.slice(1 + 32, 1 + 32 + 32).toString("hex");
 
     return { v, r, s };
+  }
+
+  /**
+  * You can sign a message according to eth_sign RPC call and retrieve v, r, s given the message and the BIP 32 path of the account to sign.
+  * @example
+  eth.signPersonalMessage("44'/60'/0'/0/0", Buffer.from("test").toString("hex")).then(result => {
+  var v = result['v'] - 27;
+  v = v.toString(16);
+  if (v.length < 2) {
+    v = "0" + v;
+  }
+  console.log("Signature 0x" + result['r'] + result['s'] + v);
+  })
+   */
+  async signPersonalMessage(path: string, pMessage: string, enc="utf-8") : Promise<{ v: number; s: string; r: string; }> {
+    return this.sendChunks(path, pMessage, 0xe0, 0x08, 0x00, enc);
   }
 
   /**
@@ -262,37 +264,16 @@ export default class Eth {
    * @param {Boolean} fullImplem use the legacy implementation
    * @returns {Promise}
    */
-  async signEIP712Message( path: string, jsonMessage: Object, fullImplem = false): Promise<{ v: number; s: string; r: string; }> {
+  async signEIP712Message(path: string, jsonMessage: Object): Promise<{ v: number; s: string; r: string; }> {
     const messageStr = JSON.stringify(jsonMessage);
-    return signEIP712Message(this.transport, path, messageStr, fullImplem);
-  }
 
-  /**
-   * Method returning a 4 bytes TLV challenge as an hexa string
-   *
-   * @returns {Promise<string>}
-   */
-  async getChallenge(): Promise<string> {
     enum APDU_FIELDS {
       CLA = 0xe0,
-      INS = 0x20,
+      INS = 0x0c,
       P1 = 0x00,
-      P2 = 0x00,
-      LC = 0x00,
+      P2 = 0x01
     }
 
-    try {
-      let response = await this.transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1, APDU_FIELDS.P2);
-      const [fourBytesChallenge, statusCode] = new RegExp("(.*)(.{4}$)").exec(response.toString("hex")) || [];
-
-      if (statusCode !== "9000") {
-        throw new Error(`An error happened while generating the challenge. Status code: ${statusCode}`);
-      }
-
-      return `0x${fourBytesChallenge}`;
-    } catch (error) {
-      log("error", "Couldn't request a challenge", error);
-      throw error;
-    }
+    return this.sendChunks(path, messageStr, APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P2, "utf-8");
   }
 }
