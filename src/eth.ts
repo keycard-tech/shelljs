@@ -14,10 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
-/* eslint @typescript-eslint/no-duplicate-enum-values: 1 */
-// FIXME drop:
 import type Transport from "./transport";
-// NB: these are temporary import for the deprecated fallback mechanism
 import { log } from "./logs";
 import { decodeTxInfo, splitPath } from "./utils";
 import { EthAppPleaseEnableContractData } from "./errors";
@@ -36,8 +33,8 @@ const remapTransactionRelatedErrors = (e: any) => {
  * Ethereum API
  *
  * @example
- * import Eth from "@KProhq/hw-app-eth";
- * const eth = new Eth(transport)
+ * import KProJS from "kprojs";
+ * const eth = new KProJS.Eth(transport)
  */
 
 export default class Eth {
@@ -54,7 +51,8 @@ export default class Eth {
    * @option boolChaincode optionally enable or not the chaincode request
    * @return an object with a publicKey, address and (optionally) chainCode
    * @example
-   * eth.getAddress("44'/60'/0'/0/0").then(o => o.address)
+   * const resp = await eth.getAddress("44'/60'/0'/0/0");
+   * console.log(resp.address);
    */
   async getAddress(path: string, boolDisplay?: boolean, boolChaincode?: boolean): Promise<{ publicKey: string; address: string; chainCode?: string }> {
     const paths = splitPath(path);
@@ -68,14 +66,14 @@ export default class Eth {
 
     try {
       let response = await this.transport.send(0xe0, 0x02, boolDisplay ? 0x01 : 0x00, boolChaincode ? 0x01 : 0x00, buffer);
-    const publicKeyLength = response[0];
-    const addressLength = response[1 + publicKeyLength];
+      const publicKeyLength = response[0];
+      const addressLength = response[1 + publicKeyLength];
 
-    return {
-      publicKey: response.subarray(1, 1 + publicKeyLength).toString("hex"),
-      address: "0x" + response.subarray(1 + publicKeyLength + 1, 1 + publicKeyLength + 1 + addressLength).toString("ascii"),
-      chainCode: boolChaincode ? response.subarray(1 + publicKeyLength + 1 + addressLength, 1 + publicKeyLength + 1 + addressLength + 32).toString("hex") : undefined
-    };
+      return {
+        publicKey: response.subarray(1, 1 + publicKeyLength).toString("hex"),
+        address: "0x" + response.subarray(1 + publicKeyLength + 1, 1 + publicKeyLength + 1 + addressLength).toString("ascii"),
+        chainCode: boolChaincode ? response.subarray(1 + publicKeyLength + 1 + addressLength, 1 + publicKeyLength + 1 + addressLength + 32).toString("hex") : undefined
+      }
     } catch (error) {
       log("error", "Couldn't get address", error);
       throw error;
@@ -89,11 +87,10 @@ export default class Eth {
    * @param rawTxHex: the raw ethereum transaction in hexadecimal to sign
    * @param resolution: resolution is an object with all "resolved" metadata necessary to allow the device to clear sign information. This includes: ERC20 token information, plugins, contracts, NFT signatures,... You must explicitly provide something to avoid having a warning. By default, you can use KPro's service or your own resolution service. See services/types.js for the contract. Setting the value to "null" will fallback everything to blind signing but will still allow the device to sign the transaction.
    * @example
-   import { KProService } from "@KProhq/hw-app-eth"
-   const tx = "e8018504e3b292008252089428ee52a8f3d6e5d15f8b131996950d7f296c7952872bd72a2487400080"; // raw tx to sign
-   const resolution = await KProService.resolveTransaction(tx);
-   const result = eth.signTransaction("44'/60'/0'/0/0", tx, resolution);
-   console.log(result);
+   * import KProJS from "kprojs"
+   * const tx = "e8018504e3b292008252089428ee52a8f3d6e5d15f8b131996950d7f296c7952872bd72a2487400080"; // raw tx to sign
+   * const resp = await eth.signTransaction("44'/60'/0'/0/0", tx);
+   * console.log(resp);
    */
   async signTransaction(path: string, rawTxHex: string): Promise<{s: string; v: string;  r: string;}> {
     const rawTx = Buffer.from(rawTxHex, "hex");
@@ -164,22 +161,18 @@ export default class Eth {
 
   /**
    */
-  getAppConfiguration(): Promise<{
-    arbitraryDataEnabled: number;
-    erc20ProvisioningNecessary: number;
-    starkEnabled: number;
-    starkv2Supported: number;
-    version: string;
-  }> {
-    return this.transport.send(0xe0, 0x06, 0x00, 0x00).then((response: any) => {
-      return {
-        arbitraryDataEnabled: response[0] & 0x01,
-        erc20ProvisioningNecessary: response[0] & 0x02,
-        starkEnabled: response[0] & 0x04,
-        starkv2Supported: response[0] & 0x08,
-        version: "" + response[1] + "." + response[2] + "." + response[3],
-      };
-    });
+  async getAppConfiguration() : Promise<{ fwVersion: string; erc20Version: number }> {
+    try {
+      const response = await this.transport.send(0xe0, 0x06, 0x00, 0x00);
+      let fwVersion = String(response[0]) + "." + String(response[1]) + "." + String(response[2]);
+      let erc20Version = (response[3] << 24) | (response[4] << 16) | (response[5] << 8) | response[6];
+
+      return { fwVersion, erc20Version }
+    } catch (error) {
+      log("error", "Couldn't get app configuration", error);
+      throw error;
+    }
+
   }
 
   private async sendChunks(path: string, m: string, cla: number, ins: number, p2: number, enc: string) : Promise<{ v: number; s: string; r: string; }> {
@@ -189,7 +182,7 @@ export default class Eth {
     let response: any;
 
     while (offset !== message.length) {
-      const maxChunkSize = offset === 0 ? 150 - 1 - paths.length * 4 - 4 : 150;
+      const maxChunkSize = offset === 0 ? 255 - 1 - paths.length * 4 - 4 : 255;
       const chunkSize = offset + maxChunkSize > message.length ? message.length - offset : maxChunkSize;
       const buffer = Buffer.alloc(offset === 0 ? 1 + paths.length * 4 + 4 + chunkSize : chunkSize);
 
@@ -210,8 +203,8 @@ export default class Eth {
     }
 
     const v = response[0];
-    const r = response.slice(1, 1 + 32).toString("hex");
-    const s = response.slice(1 + 32, 1 + 32 + 32).toString("hex");
+    const r = response.subarray(1, 1 + 32).toString("hex");
+    const s = response.subarray(1 + 32, 1 + 32 + 32).toString("hex");
 
     return { v, r, s };
   }
@@ -219,14 +212,13 @@ export default class Eth {
   /**
   * You can sign a message according to eth_sign RPC call and retrieve v, r, s given the message and the BIP 32 path of the account to sign.
   * @example
-  eth.signPersonalMessage("44'/60'/0'/0/0", Buffer.from("test").toString("hex")).then(result => {
-  var v = result['v'] - 27;
-  v = v.toString(16);
-  if (v.length < 2) {
-    v = "0" + v;
-  }
-  console.log("Signature 0x" + result['r'] + result['s'] + v);
-  })
+  * const resp = await eth.signPersonalMessage("44'/60'/0'/0/0", Buffer.from("test").toString("hex");
+  * let v = resp['v'] - 27;
+  * v = v.toString(16);
+  * if (v.length < 2) {
+  *   v = "0" + v;
+  * }
+  * console.log("Signature 0x" + resp['r'] + resp['s'] + v);
    */
   async signPersonalMessage(path: string, pMessage: string, enc="utf-8") : Promise<{ v: number; s: string; r: string; }> {
     return this.sendChunks(path, pMessage, 0xe0, 0x08, 0x00, enc);
@@ -237,27 +229,27 @@ export default class Eth {
    * https://github.com/KProHQ/app-ethereum/blob/develop/doc/ethapp.asc#sign-eth-eip-712
    * ⚠️ This method is not compatible with nano S (LNS). Make sure to use a try/catch to fallback on the signEIP712HashedMessage method ⚠️
    @example
-   eth.signEIP721Message("44'/60'/0'/0/0", {
-      domain: {
-        chainId: 69,
-        name: "Da Domain",
-        verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
-        version: "1"
-      },
-      types: {
-        "EIP712Domain": [
-              { name: "name", type: "string" },
-              { name: "version", type: "string" },
-              { name: "chainId", type: "uint256" },
-              { name: "verifyingContract", type: "address" }
-          ],
-        "Test": [
-          { name: "contents", type: "string" }
-        ]
-      },
-      primaryType: "Test",
-      message: {contents: "Hello, Bob!"},
-    })
+   * const resp = await eth.signEIP721Message("44'/60'/0'/0/0", {
+   *   domain: {
+   *     chainId: 69,
+   *     name: "Da Domain",
+   *     verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+   *     version: "1"
+   *   },
+   *   types: {
+   *     "EIP712Domain": [
+   *           { name: "name", type: "string" },
+   *           { name: "version", type: "string" },
+   *           { name: "chainId", type: "uint256" },
+   *           { name: "verifyingContract", type: "address" }
+   *       ],
+   *     "Test": [
+   *       { name: "contents", type: "string" }
+   *     ]
+   *   },
+   *   primaryType: "Test",
+   *   message: {contents: "Hello, Bob!"},
+   * });
    *
    * @param {String} path derivationPath
    * @param {Object} jsonMessage message to sign
@@ -275,5 +267,43 @@ export default class Eth {
     }
 
     return this.sendChunks(path, messageStr, APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P2, "utf-8");
+  }
+
+/**
+  * You can load a firmware
+  * @example
+  *
+  * @param {String} fw firmware
+  * @returns {Promise}
+  */
+  async loadFirmware(fw: string) : Promise<number> {
+    const message = Buffer.from(fw, "hex");
+    let offset = 0;
+    let response: any;
+
+    enum APDU_FIELDS {
+      CLA = 0xe0,
+      INS = 0xf2,
+      P2 = 0x00
+    }
+
+    while (offset !== message.length) {
+      const maxChunkSize = offset === 0 ? 244 - 4 : 240;
+      const chunkSize = offset + maxChunkSize > message.length ? message.length - offset : maxChunkSize;
+      const buffer = Buffer.alloc(offset === 0 ? 4 + chunkSize : chunkSize);
+
+      if (offset === 0) {
+        buffer.writeUInt32BE(message.length, 0);
+        message.copy(buffer, 4, offset, offset + chunkSize);
+      } else {
+        message.copy(buffer, 0, offset, offset + chunkSize);
+      }
+
+      response = await this.transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, offset === 0 ? 0x00 : 0x80, APDU_FIELDS.P2, buffer);
+
+      offset += chunkSize;
+    }
+
+    return (response[0] << 8) | response[1];
   }
 }
