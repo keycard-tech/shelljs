@@ -18,19 +18,20 @@ import { log } from "./logs";
 import { Job } from "./types/promise-types";
 
 export const delay = (ms: number): Promise<void> => new Promise(f => setTimeout(f, ms));
+
 const defaults = {
   maxRetry: 4,
   interval: 300,
   intervalMultiplicator: 1.5,
   context: "",
 };
-export function retry<A>(f: () => Promise<A>, options?: Partial<typeof defaults>): Promise<A> {
+export const retry = <A>(f: () => Promise<A>, options?: Partial<typeof defaults>): Promise<A> => {
   const { maxRetry, interval, intervalMultiplicator, context } = {
     ...defaults,
     ...options,
   };
 
-  function rec(remainingTry: number, i: number): Promise<A> {
+  const rec = (remainingTry: number, i: number): Promise<A> => {
     const result = f();
 
     if (remainingTry <= 0) {
@@ -47,10 +48,7 @@ export function retry<A>(f: () => Promise<A>, options?: Partial<typeof defaults>
   return rec(maxRetry, interval);
 }
 
-export const atomicQueue = <R, A extends Array<any>>(
-  job: Job<R, A>,
-  queueIdentifier: (...args: A) => string = () => "",
-): Job<R, A> => {
+export const atomicQueue = <R, A extends Array<any>>( job: Job<R, A>, queueIdentifier: (...args: A) => string = () => ""): Job<R, A> => {
   const queues: Record<string, any> = {};
   return (...args) => {
     const id = queueIdentifier(...args);
@@ -61,7 +59,7 @@ export const atomicQueue = <R, A extends Array<any>>(
   };
 };
 
-export function execAndWaitAtLeast<A>(ms: number, cb: () => Promise<A>): Promise<A> {
+export const execAndWaitAtLeast = <A>(ms: number, cb: () => Promise<A>): Promise<A> => {
   const startTime = Date.now();
   return cb().then(r => {
     const remaining = ms - (Date.now() - startTime);
@@ -77,20 +75,18 @@ export function execAndWaitAtLeast<A>(ms: number, cb: () => Promise<A>): Promise
  * but with a guarantee that it will not create more than n concurrent call to f
  * where f is a function that returns a promise
  */
-export async function promiseAllBatched<A, B>(
-  batch: number,
-  items: Array<A>,
-  fn: (arg0: A, arg1: number) => Promise<B>,
-): Promise<B[]> {
+export async function promiseAllBatched<A, B>( batch: number, items: Array<A>, fn: (arg0: A, arg1: number) => Promise<B>): Promise<B[]> {
   const data = Array(items.length);
   const queue = items.map((item, index) => ({
     item,
     index,
   }));
 
-  async function step() {
+  async function step() : Promise<any> {
     if (queue.length === 0) return;
+
     const first = queue.shift();
+
     if (first) {
       const { item, index } = first;
       data[index] = await fn(item, index);
@@ -99,10 +95,6 @@ export async function promiseAllBatched<A, B>(
   }
 
   // initially, we schedule <batch> items in parallel
-  await Promise.all(
-    Array(Math.min(batch, items.length))
-      .fill(() => undefined)
-      .map(step),
-  );
+  await Promise.all(Array(Math.min(batch, items.length)).fill(() => undefined).map(step));
   return data;
 }

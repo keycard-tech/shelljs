@@ -269,21 +269,14 @@ export default class Eth {
     return this.sendChunks(path, messageStr, APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P2, "utf-8");
   }
 
-/**
-  * You can load a firmware
-  * @example
-  *
-  * @param {String} fw firmware
-  * @returns {Promise}
-  */
-  async loadFirmware(fw: string) : Promise<number> {
-    const message = Buffer.from(fw, "hex");
+  private async load(data: string, ins: number) : Promise<number> {
+    const message = Buffer.from(data, "hex");
     let offset = 0;
     let response: any;
 
     enum APDU_FIELDS {
       CLA = 0xe0,
-      INS = 0xf2,
+      INS = ins,
       P2 = 0x00
     }
 
@@ -305,5 +298,28 @@ export default class Eth {
     }
 
     return (response[0] << 8) | response[1];
+  }
+
+  /**
+  * You can load a firmware
+  * @example
+  *
+  * @param {String} fw firmware
+  * @returns {Promise}
+  */
+  async loadFirmware(fw: string) : Promise<number> {
+    return await this.load(fw, 0xf2);
+  }
+
+  /**
+  * You can load a ERC20 and Chain DB
+  * @example
+  *
+  * @param {String} db database
+  * @returns {Promise}
+  */
+
+  async loadERC20DB(db: string) : Promise<number> {
+    return await this.load(db, 0xf4);
   }
 }

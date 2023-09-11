@@ -22,7 +22,7 @@ const Tag = 0x05;
 
 export const kproUSBVendorId = 0x1209;
 
-function asUInt16BE(value: any) : any {
+const asUInt16BE = (value: any) : any => {
   const b = Buffer.alloc(2);
   b.writeUInt16BE(value, 0);
   return b;
@@ -37,12 +37,12 @@ const initialAcc = {
 /**
  *
  */
-export function hidFraming(channel: number, packetSize: number) :
+export const hidFraming = (channel: number, packetSize: number) :
 {
   makeBlocks: (apdu: Buffer) => Buffer[],
   reduceResponse: (acc: ResponseAcc, chunk: Buffer) => ResponseAcc,
   getReducedResult: (acc: ResponseAcc) => Buffer | null | undefined
-}
+} =>
 
 {
   return {

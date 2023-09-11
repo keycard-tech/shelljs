@@ -56,7 +56,7 @@ export const listen = (cb: Subscriber): Unsubscribe => {
   };
 };
 
-function dispatch(log: Log) {
+const dispatch = (log: Log): void => {
   for (let i = 0; i < subscribers.length; i++) {
     try {
       subscribers[i](log);

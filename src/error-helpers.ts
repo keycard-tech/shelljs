@@ -115,9 +115,7 @@ export const deserializeError = (object: any): Error | undefined => {
 };
 
 // inspired from https://github.com/sindresorhus/serialize-error/blob/master/index.js
-export const serializeError = (
-  value: undefined | To | string | (() => unknown),
-): undefined | To | string => {
+export const serializeError = (value: undefined | To | string | (() => unknown)): undefined | To | string => {
   if (!value) return value;
   if (typeof value === "object") {
     return destroyCircular(value, []);
@@ -129,7 +127,7 @@ export const serializeError = (
 };
 
 // https://www.npmjs.com/package/destroy-circular
-function destroyCircular(from: any, seen: Array<any>): To {
+const destroyCircular = (from: any, seen: Array<any>): To => {
   const to: any = {};
   seen.push(from);
   for (const key of Object.keys(from)) {

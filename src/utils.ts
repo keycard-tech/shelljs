@@ -17,7 +17,7 @@
 import { encode, decode } from "@ethersproject/rlp";
 import { BigNumber } from "bignumber.js";
 
-export function splitPath(path: string): number[] {
+export const splitPath = (path: string): number[] => {
   const result: number[] = [];
   const components = path.split("/");
   components.forEach(element => {
@@ -36,19 +36,19 @@ export function splitPath(path: string): number[] {
   return result;
 }
 
-export function hexBuffer(str: string): Buffer {
+export const hexBuffer = (str: string): Buffer => {
   return Buffer.from(str.startsWith("0x") ? str.slice(2) : str, "hex");
 }
 
-export function maybeHexBuffer(str: string | null | undefined): Buffer | null | undefined {
+export const maybeHexBuffer = (str: string | null | undefined): Buffer | null | undefined => {
   if (!str) return null;
   return hexBuffer(str);
 }
 
-export const decodeTxInfo = (rawTx: Buffer) => {
+export const decodeTxInfo = (rawTx: Buffer) : any => {
   const VALID_TYPES = [1, 2];
   const txType = VALID_TYPES.includes(rawTx[0]) ? rawTx[0] : null;
-  const rlpData = txType === null ? rawTx : rawTx.slice(1);
+  const rlpData = txType === null ? rawTx : rawTx.subarray(1);
   const rlpTx = decode(rlpData).map((hex: any) => Buffer.from(hex.slice(2), "hex"));
   let chainIdTruncated = 0;
   const rlpDecoded = decode(rlpData);

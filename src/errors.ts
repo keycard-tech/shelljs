@@ -240,7 +240,7 @@ export const StatusCodes = {
   NOT_ENOUGH_SPACE: 0x5102,
 };
 
-export function getAltStatusMessage(code: number): string | undefined | null {
+export const getAltStatusMessage = (code: number): string | undefined | null => {
   switch (code) {
     // improve text of most common errors
     case 0x6700:
