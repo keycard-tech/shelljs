@@ -269,8 +269,7 @@ export default class Eth {
     return this.sendChunks(path, messageStr, APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P2, "utf-8");
   }
 
-  private async load(data: string, ins: number) : Promise<number> {
-    const message = Buffer.from(data, "hex");
+  private async load(data: Buffer, ins: number) : Promise<number> {
     let offset = 0;
     let response: any;
 
@@ -280,16 +279,16 @@ export default class Eth {
       P2 = 0x00
     }
 
-    while (offset !== message.length) {
+    while (offset !== data.length) {
       const maxChunkSize = offset === 0 ? 244 - 4 : 240;
-      const chunkSize = offset + maxChunkSize > message.length ? message.length - offset : maxChunkSize;
+      const chunkSize = offset + maxChunkSize > data.length ? data.length - offset : maxChunkSize;
       const buffer = Buffer.alloc(offset === 0 ? 4 + chunkSize : chunkSize);
 
       if (offset === 0) {
-        buffer.writeUInt32BE(message.length, 0);
-        message.copy(buffer, 4, offset, offset + chunkSize);
+        buffer.writeUInt32BE(data.length, 0);
+        data.copy(buffer, 4, offset, offset + chunkSize);
       } else {
-        message.copy(buffer, 0, offset, offset + chunkSize);
+        data.copy(buffer, 0, offset, offset + chunkSize);
       }
 
       response = await this.transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, offset === 0 ? 0x00 : 0x80, APDU_FIELDS.P2, buffer);
@@ -307,7 +306,7 @@ export default class Eth {
   * @param {String} fw firmware
   * @returns {Promise}
   */
-  async loadFirmware(fw: string) : Promise<number> {
+  async loadFirmware(fw: Buffer) : Promise<number> {
     return await this.load(fw, 0xf2);
   }
 
@@ -319,7 +318,7 @@ export default class Eth {
   * @returns {Promise}
   */
 
-  async loadERC20DB(db: string) : Promise<number> {
+  async loadERC20DB(db: Buffer) : Promise<number> {
     return await this.load(db, 0xf4);
   }
 }
