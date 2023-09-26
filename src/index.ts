@@ -28,4 +28,3 @@ export let KProJS = {
 
 export { DeviceTypes, ErrorTypes, TransportTypes, LogsTypes, HIDTypes, PromiseTypes} ;
 export default KProJS;
-Object.assign(module.exports, KProJS);

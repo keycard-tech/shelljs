@@ -293,6 +293,8 @@ export default class Eth {
 
       response = await this.transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, offset === 0 ? 0x00 : 0x80, APDU_FIELDS.P2, buffer);
 
+      this.transport.emit("chunk-loaded", chunkSize);
+
       offset += chunkSize;
     }
 
@@ -306,8 +308,8 @@ export default class Eth {
   * @param {String} fw firmware
   * @returns {Promise}
   */
-  async loadFirmware(fw: Buffer) : Promise<number> {
-    return await this.load(fw, 0xf2);
+  async loadFirmware(fw: ArrayBuffer) : Promise<number> {
+    return await this.load(Buffer.from(fw), 0xf2);
   }
 
   /**
@@ -318,7 +320,7 @@ export default class Eth {
   * @returns {Promise}
   */
 
-  async loadERC20DB(db: Buffer) : Promise<number> {
-    return await this.load(db, 0xf4);
+  async loadERC20DB(db: ArrayBuffer) : Promise<number> {
+    return await this.load(Buffer.from(db), 0xf4);
   }
 }
