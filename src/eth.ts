@@ -33,8 +33,9 @@ const remapTransactionRelatedErrors = (e: any) => {
  * Ethereum API
  *
  * @example
- * import KProJS from "kprojs";
- * const eth = new KProJS.Eth(transport)
+ import KProJS from "kprojs";
+ const eth = new KProJS.Eth(transport)
+ *
  */
 
 export default class Eth {
@@ -50,9 +51,10 @@ export default class Eth {
    * @option boolDisplay optionally enable or not the display
    * @option boolChaincode optionally enable or not the chaincode request
    * @return an object with a publicKey, address and (optionally) chainCode
+   *
    * @example
-   * const resp = await eth.getAddress("44'/60'/0'/0/0");
-   * console.log(resp.address);
+   const resp = await eth.getAddress("44'/60'/0'/0/0");
+   console.log(resp.address);
    */
   async getAddress(path: string, boolDisplay?: boolean, boolChaincode?: boolean): Promise<{ publicKey: string; address: string; chainCode?: string }> {
     const paths = splitPath(path);
@@ -81,16 +83,16 @@ export default class Eth {
   }
 
   /**
-   * You can sign a transaction and retrieve v, r, s given the raw transaction and the BIP 32 path of the account to sign.
+   * Sign a transaction and retrieve v, r, s given the raw transaction and the BIP 32 path of the account to sign.
    *
    * @param path: the BIP32 path to sign the transaction on
    * @param rawTxHex: the raw ethereum transaction in hexadecimal to sign
-   * @param resolution: resolution is an object with all "resolved" metadata necessary to allow the device to clear sign information. This includes: ERC20 token information, plugins, contracts, NFT signatures,... You must explicitly provide something to avoid having a warning. By default, you can use KPro's service or your own resolution service. See services/types.js for the contract. Setting the value to "null" will fallback everything to blind signing but will still allow the device to sign the transaction.
+   * @return an object with s, v and r
+   *
    * @example
-   * import KProJS from "kprojs"
-   * const tx = "e8018504e3b292008252089428ee52a8f3d6e5d15f8b131996950d7f296c7952872bd72a2487400080"; // raw tx to sign
-   * const resp = await eth.signTransaction("44'/60'/0'/0/0", tx);
-   * console.log(resp);
+   const tx = "e8018504e3b292008252089428ee52a8f3d6e5d15f8b131996950d7f296c7952872bd72a2487400080"; // raw tx to sign
+   const resp = await eth.signTransaction("44'/60'/0'/0/0", tx);
+   console.log(resp);
    */
   async signTransaction(path: string, rawTxHex: string): Promise<{s: string; v: string;  r: string;}> {
     const rawTx = Buffer.from(rawTxHex, "hex");
@@ -160,7 +162,16 @@ export default class Eth {
   }
 
   /**
-   */
+  * Get firmware and ERC20 DB version
+  *
+  * @return an object with fwVersion and erc20Version
+  *
+  * @example
+  const {fwVersion, erc20Version} = await eth.getAppConfiguration();
+  console.log(fwVersion);
+  console.log(erc20Version);
+  *
+  */
   async getAppConfiguration() : Promise<{ fwVersion: string; erc20Version: number }> {
     try {
       const response = await this.transport.send(0xe0, 0x06, 0x00, 0x00);
@@ -210,51 +221,55 @@ export default class Eth {
   }
 
   /**
-  * You can sign a message according to eth_sign RPC call and retrieve v, r, s given the message and the BIP 32 path of the account to sign.
+  * Sign a personal message and retrieve v, r, s given the message and the BIP 32 path of the account to sign.
+  * @param path: the BIP32 path to sign the message
+  * @param pMessage: personal message
+  * @option enc: buffer encoding, default: "utf-8"
+  * @return an object with v, s and r
+  *
   * @example
-  * const resp = await eth.signPersonalMessage("44'/60'/0'/0/0", Buffer.from("test").toString("hex");
-  * let v = resp['v'] - 27;
-  * v = v.toString(16);
-  * if (v.length < 2) {
-  *   v = "0" + v;
-  * }
-  * console.log("Signature 0x" + resp['r'] + resp['s'] + v);
-   */
+  const resp = await eth.signPersonalMessage("44'/60'/0'/0/0", "Hello world!");
+  let v = resp['v'] - 27;
+  v = v.toString(16);
+  if (v.length < 2) {
+    v = "0" + v;
+  }
+  console.log("Signature 0x" + resp['r'] + resp['s'] + v);
+  */
   async signPersonalMessage(path: string, pMessage: string, enc="utf-8") : Promise<{ v: number; s: string; r: string; }> {
     return this.sendChunks(path, pMessage, 0xe0, 0x08, 0x00, enc);
   }
 
   /**
-   * Sign an EIP-721 formatted message following the specification here:
-   * https://github.com/KProHQ/app-ethereum/blob/develop/doc/ethapp.asc#sign-eth-eip-712
-   * ⚠️ This method is not compatible with nano S (LNS). Make sure to use a try/catch to fallback on the signEIP712HashedMessage method ⚠️
-   @example
-   * const resp = await eth.signEIP721Message("44'/60'/0'/0/0", {
-   *   domain: {
-   *     chainId: 69,
-   *     name: "Da Domain",
-   *     verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
-   *     version: "1"
-   *   },
-   *   types: {
-   *     "EIP712Domain": [
-   *           { name: "name", type: "string" },
-   *           { name: "version", type: "string" },
-   *           { name: "chainId", type: "uint256" },
-   *           { name: "verifyingContract", type: "address" }
-   *       ],
-   *     "Test": [
-   *       { name: "contents", type: "string" }
-   *     ]
-   *   },
-   *   primaryType: "Test",
-   *   message: {contents: "Hello, Bob!"},
-   * });
+   * Sign an EIP-712 formatted message
    *
-   * @param {String} path derivationPath
-   * @param {Object} jsonMessage message to sign
-   * @param {Boolean} fullImplem use the legacy implementation
-   * @returns {Promise}
+   * @param {String} path the BIP32 path to sign the message
+   * @param {Object} jsonMessage EIP712 message to sign
+   * @return an object with v, s and r
+   *
+   * @example
+   const resp = await eth.signEIP712Message("44'/60'/0'/0/0", {
+     domain: {
+       chainId: 69,
+       name: "Da Domain",
+       verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+        version: "1"
+      },
+      types: {
+        "EIP712Domain": [
+              { name: "name", type: "string" },
+              { name: "version", type: "string" },
+              { name: "chainId", type: "uint256" },
+              { name: "verifyingContract", type: "address" }
+          ],
+        "Test": [
+          { name: "contents", type: "string" }
+        ]
+      },
+      primaryType: "Test",
+      message: {contents: "Hello, Bob!"},
+    });
+   *
    */
   async signEIP712Message(path: string, jsonMessage: Object): Promise<{ v: number; s: string; r: string; }> {
     const messageStr = JSON.stringify(jsonMessage);
@@ -303,21 +318,33 @@ export default class Eth {
 
   /**
   * You can load a firmware
-  * @example
   *
-  * @param {String} fw firmware
-  * @returns {Promise}
+  * @param {ArrayBuffer} fw firmware
+  * @return {Promise}
+  *
+  * @example
+  const fs = require('fs'),
+  let f = fs.readFileSync('./firmware.bin');
+  let fw = new Uint8Array(f);
+  await eth.loadFirmware(fw);
+  *
   */
   async loadFirmware(fw: ArrayBuffer) : Promise<number> {
     return await this.load(Buffer.from(fw), 0xf2);
   }
 
   /**
-  * You can load a ERC20 and Chain DB
-  * @example
+  * Load a ERC20 and Chain DB
   *
-  * @param {String} db database
-  * @returns {Promise}
+  * @param {ArrayBuffer} db database
+  * @return {Promise}
+  *
+  * @example
+  const fs = require('fs'),
+  let f = fs.readFileSync('./erc20db.bin');
+  let db = new Uint8Array(f);
+  await eth.loadERC20DB(db);
+  *
   */
 
   async loadERC20DB(db: ArrayBuffer) : Promise<number> {
