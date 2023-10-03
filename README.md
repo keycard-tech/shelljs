@@ -143,7 +143,7 @@ sign an EIP-712 formatted message
 ##### Examples
 
 ```javascript
-const resp = await eth.signEIP721Message("44'/60'/0'/0/0", {
+const resp = await eth.signEIP712Message("44'/60'/0'/0/0", {
 domain: {
 chainId: 69,
 name: "Da Domain",
