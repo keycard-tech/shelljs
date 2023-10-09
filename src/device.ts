@@ -19,7 +19,7 @@ import { DeviceModel } from "./types/device-types";
 export namespace KProDevice {
   const device: DeviceModel = {
     id: 0,
-    productName: "Keycard Pro Wallet",
+    productName: "Keycard Pro",
     productId: 0x0001
   }
 

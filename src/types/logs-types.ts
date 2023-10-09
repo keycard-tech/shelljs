@@ -22,7 +22,11 @@ export interface Log {
   id: string;
   // date of the log
   date: Date;
+  context?: TraceContext;
 }
 
 export type Unsubscribe = () => void;
 export type Subscriber = (arg0: Log) => void;
+export type TraceContext = Record<string, unknown>;
+export type LogData = any;
+export type LogType = string;

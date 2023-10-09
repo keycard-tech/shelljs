@@ -18,6 +18,7 @@
 /**
  * A Log object
  */
+import { LogsTypes } from ".";
 import { Subscriber, Unsubscribe, Log } from "./types/logs-types";
 let id = 0;
 const subscribers: Subscriber[] = [];
@@ -76,4 +77,94 @@ declare global {
 
 if (typeof window !== "undefined") {
   window.__kproLogsListen = listen;
+}
+
+export const trace = ({
+  type,
+  message,
+  data,
+  context,
+}: {
+  type: LogsTypes.LogType;
+  message?: string;
+  data?: LogsTypes.LogData;
+  context?: LogsTypes.TraceContext;
+}) => {
+  const obj: Log = {
+    type,
+    id: String(++id),
+    date: new Date(),
+  };
+
+  if (message) obj.message = message;
+  if (data) obj.data = data;
+  if (context) obj.context = context;
+
+  dispatch(obj);
+};
+
+export class LocalTracer {
+  constructor(private type: LogsTypes.LogType, private context?: LogsTypes.TraceContext) {}
+
+  trace(message: string, data?: LogsTypes.TraceContext) {
+    trace({
+      type: this.type,
+      message,
+      data,
+      context: this.context,
+    });
+  }
+
+  getContext(): LogsTypes.TraceContext | undefined {
+    return this.context;
+  }
+
+  setContext(context?: LogsTypes.TraceContext) {
+    this.context = context;
+  }
+
+  updateContext(contextToAdd: LogsTypes.TraceContext) {
+    this.context = { ...this.context, ...contextToAdd };
+  }
+
+  getType(): LogsTypes.LogType {
+    return this.type;
+  }
+
+  setType(type: LogsTypes.LogType) {
+    this.type = type;
+  }
+
+  /**
+   * Create a new instance of the LocalTracer with an updated `type`
+   *
+   * It does not mutate the calling instance, but returns a new LocalTracer,
+   * following a simple builder pattern.
+   */
+  withType(type: LogsTypes.LogType): LocalTracer {
+    return new LocalTracer(type, this.context);
+  }
+
+  /**
+   * Create a new instance of the LocalTracer with a new `context`
+   *
+   * It does not mutate the calling instance, but returns a new LocalTracer,
+   * following a simple builder pattern.
+   *
+   * @param context A TraceContext, that can undefined to reset the context
+   */
+  withContext(context?: LogsTypes.TraceContext): LocalTracer {
+    return new LocalTracer(this.type, context);
+  }
+
+  /**
+   * Create a new instance of the LocalTracer with an updated `context`,
+   * on which an additional context is merged with the existing one.
+   *
+   * It does not mutate the calling instance, but returns a new LocalTracer,
+   * following a simple builder pattern.
+   */
+  withUpdatedContext(contextToAdd: LogsTypes.TraceContext): LocalTracer {
+    return new LocalTracer(this.type, { ...this.context, ...contextToAdd });
+  }
 }

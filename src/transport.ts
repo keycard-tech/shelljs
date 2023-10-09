@@ -18,6 +18,10 @@ import EventEmitter from "events";
 import { TransportRaceCondition, TransportError, StatusCodes, getAltStatusMessage, TransportStatusError } from "./errors";
 import * as TransportTypes from "./types/transport-types"
 export { TransportError, TransportStatusError, StatusCodes, getAltStatusMessage };
+import { TraceContext, LogType } from "./types/logs-types";
+import { LocalTracer } from "./logs";
+
+const DEFAULT_LOG_TYPE = "transport";
 
 /**
  * The Transport class defines a generic interface for communicating with a KPro hardware wallet.
@@ -28,6 +32,11 @@ export default class Transport {
   exchangeTimeout = 30000;
   unresponsiveTimeout = 15000;
   exchangeBusyPromise: Promise<void> | null | undefined;
+  tracer: LocalTracer;
+
+  constructor({ context, logType }: { context?: TraceContext; logType?: LogType } = {}) {
+    this.tracer = new LocalTracer(logType ?? DEFAULT_LOG_TYPE, context);
+  }
 
   /**
    * Check if the transport is supported on the current platform/browser.
