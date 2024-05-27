@@ -180,7 +180,7 @@ export default class Eth {
       const fwVersion = String(response[0]) + "." + String(response[1]) + "." + String(response[2]);
       const erc20Version = (response[3] << 24) | (response[4] << 16) | (response[5] << 8) | response[6];
       const serialNumber = response.subarray(7, 23).toString("hex");
-      const publicKey = response.subarray(24).toString("hex");
+      const publicKey = response.subarray(23, 56).toString("hex");
 
       return { fwVersion, erc20Version, serialNumber, publicKey }
     } catch (error) {
