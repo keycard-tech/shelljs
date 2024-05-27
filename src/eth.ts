@@ -162,23 +162,27 @@ export default class Eth {
   }
 
   /**
-  * Get firmware and ERC20 DB version
+  * Get firmware and ERC20 DB version, serial number, publicKey
   *
-  * @return an object with fwVersion and erc20Version
+  * @return an object with fwVersion, erc20Version, serialNumber, publicKey
   *
   * @example
-  const {fwVersion, erc20Version} = await eth.getAppConfiguration();
+  const {fwVersion, erc20Version, serialNumber, publicKey} = await eth.getAppConfiguration();
   console.log(fwVersion);
   console.log(erc20Version);
+  console.log(serialNumber);
+  console.log(publicKey);
   *
   */
-  async getAppConfiguration() : Promise<{ fwVersion: string; erc20Version: number }> {
+  async getAppConfiguration() : Promise<{ fwVersion: string; erc20Version: number; serialNumber: string; publicKey: string }> {
     try {
       const response = await this.transport.send(0xe0, 0x06, 0x00, 0x00);
-      let fwVersion = String(response[0]) + "." + String(response[1]) + "." + String(response[2]);
-      let erc20Version = (response[3] << 24) | (response[4] << 16) | (response[5] << 8) | response[6];
+      const fwVersion = String(response[0]) + "." + String(response[1]) + "." + String(response[2]);
+      const erc20Version = (response[3] << 24) | (response[4] << 16) | (response[5] << 8) | response[6];
+      const serialNumber = response.subarray(7, 23).toString("hex");
+      const publicKey = response.subarray(24).toString("hex");
 
-      return { fwVersion, erc20Version }
+      return { fwVersion, erc20Version, serialNumber, publicKey }
     } catch (error) {
       log("error", "Couldn't get app configuration", error);
       throw error;
@@ -214,8 +218,8 @@ export default class Eth {
     }
 
     const v = response[0];
-    const r = response.subarray(1, 1 + 32).toString("hex");
-    const s = response.subarray(1 + 32, 1 + 32 + 32).toString("hex");
+    const r = response.subarray(1, 33).toString("hex");
+    const s = response.subarray(33, 65).toString("hex");
 
     return { v, r, s };
   }
