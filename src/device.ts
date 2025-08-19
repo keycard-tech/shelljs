@@ -17,17 +17,24 @@
 import { DeviceModel } from "./types/device-types";
 
 export namespace ShellDevice {
-  const device: DeviceModel = {
-    id: 0,
-    productName: "Keycard Shell",
-    productId: 0x0001
-  }
+  const devices: DeviceModel[] = [
+    {
+        id: 0,
+        productName: "Keycard Shell (Beta)",
+        productId: 0x0001
+    },
+    {
+        id: 1,
+        productName: "Keycard Shell",
+        productId: 0x21F7
+    }
+]
 
   export const identifyUSBProductId = (usbProductId: number): DeviceModel | null | undefined => {
-    return device.productId === usbProductId ? device : null;
+    return devices.find((device) => device.productId === usbProductId);
   };
 
   export const identifyProductName = (productName: string): DeviceModel | null | undefined => {
-    return (productName === device.productName) ? device : null;
+    return devices.find((device) => device.productName === productName);
   };
 }
