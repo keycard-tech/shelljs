@@ -15,139 +15,21 @@
  *  limitations under the License.
  ********************************************************************************/
 import { serializeError, deserializeError, createCustomErrorClass, addCustomErrorDeserializer } from "./error-helpers";
-import { ShellErrorConstructor } from "./types/error-types";
 export { serializeError, deserializeError, createCustomErrorClass, addCustomErrorDeserializer };
 
-export const AccountNameRequiredError = createCustomErrorClass("AccountNameRequired");
-export const AccountNotSupported = createCustomErrorClass("AccountNotSupported");
-
-export const AmountRequired = createCustomErrorClass("AmountRequired");
 export const CantOpenDevice = createCustomErrorClass("CantOpenDevice");
-export const CashAddrNotSupported = createCustomErrorClass("CashAddrNotSupported");
-export const ClaimRewardsFeesWarning = createCustomErrorClass("ClaimRewardsFeesWarning");
 
-export const CurrencyNotSupported = createCustomErrorClass< { currencyName: string }, ShellErrorConstructor<{ currencyName: string }> >("CurrencyNotSupported");
-
-export const DeviceAppVerifyNotSupported = createCustomErrorClass("DeviceAppVerifyNotSupported");
-export const DeviceGenuineSocketEarlyClose = createCustomErrorClass("DeviceGenuineSocketEarlyClose");
-export const DeviceNotGenuineError = createCustomErrorClass("DeviceNotGenuine");
-export const DeviceOnDashboardExpected = createCustomErrorClass("DeviceOnDashboardExpected");
-export const DeviceOnDashboardUnexpected = createCustomErrorClass("DeviceOnDashboardUnexpected");
-export const DeviceInOSUExpected = createCustomErrorClass("DeviceInOSUExpected");
-export const DeviceHalted = createCustomErrorClass("DeviceHalted");
-export const DeviceNameInvalid = createCustomErrorClass("DeviceNameInvalid");
-export const DeviceSocketFail = createCustomErrorClass("DeviceSocketFail");
-export const DeviceSocketNoBulkStatus = createCustomErrorClass("DeviceSocketNoBulkStatus");
-
-export const LockedDeviceError = createCustomErrorClass("LockedDeviceError");
 export const UnresponsiveDeviceError = createCustomErrorClass("UnresponsiveDeviceError");
 export const DisconnectedDevice = createCustomErrorClass("DisconnectedDevice");
 export const DisconnectedDeviceDuringOperation = createCustomErrorClass("DisconnectedDeviceDuringOperation");
-
-export const DeviceExtractOnboardingStateError = createCustomErrorClass("DeviceExtractOnboardingStateError");
-export const DeviceOnboardingStatePollingError = createCustomErrorClass("DeviceOnboardingStatePollingError");
-
-export const EnpointConfigError = createCustomErrorClass("EnpointConfig");
-export const EthAppPleaseEnableContractData = createCustomErrorClass("EthAppPleaseEnableContractData");
-
-export const FeeEstimationFailed = createCustomErrorClass("FeeEstimationFailed");
-export const FirmwareNotRecognized = createCustomErrorClass("FirmwareNotRecognized");
-export const HardResetFail = createCustomErrorClass("HardResetFail");
-export const InvalidXRPTag = createCustomErrorClass("InvalidXRPTag");
-export const InvalidAddress = createCustomErrorClass("InvalidAddress");
-export const InvalidNonce = createCustomErrorClass("InvalidNonce");
-export const InvalidAddressBecauseDestinationIsAlsoSource = createCustomErrorClass("InvalidAddressBecauseDestinationIsAlsoSource");
-export const LatestMCUInstalledError = createCustomErrorClass("LatestMCUInstalledError");
-export const UnknownMCU = createCustomErrorClass("UnknownMCU");
-
-export const ShellAPIError = createCustomErrorClass("ShellAPIError");
-export const ShellAPIErrorWithMessage = createCustomErrorClass("ShellAPIErrorWithMessage");
-export const ShellAPINotAvailable = createCustomErrorClass("ShellAPINotAvailable");
-
-export const ManagerAppAlreadyInstalledError = createCustomErrorClass("ManagerAppAlreadyInstalled");
-export const ManagerAppDepInstallRequired = createCustomErrorClass("ManagerAppDepInstallRequired");
-export const ManagerAppDepUninstallRequired = createCustomErrorClass("ManagerAppDepUninstallRequired");
-export const ManagerDeviceLockedError = createCustomErrorClass("ManagerDeviceLocked");
-export const ManagerFirmwareNotEnoughSpaceError = createCustomErrorClass("ManagerFirmwareNotEnoughSpace");
-export const ManagerNotEnoughSpaceError = createCustomErrorClass("ManagerNotEnoughSpace");
-export const ManagerUninstallBTCDep = createCustomErrorClass("ManagerUninstallBTCDep");
-export const NetworkDown = createCustomErrorClass("NetworkDown");
-export const NoAddressesFound = createCustomErrorClass("NoAddressesFound");
-
-export const NotEnoughBalance = createCustomErrorClass("NotEnoughBalance");
-export const NotEnoughBalanceToDelegate = createCustomErrorClass("NotEnoughBalanceToDelegate");
-export const NotEnoughBalanceInParentAccount = createCustomErrorClass("NotEnoughBalanceInParentAccount");
-export const NotEnoughSpendableBalance = createCustomErrorClass("NotEnoughSpendableBalance");
-export const NotEnoughBalanceBecauseDestinationNotCreated = createCustomErrorClass("NotEnoughBalanceBecauseDestinationNotCreated");
-export const NoAccessToCamera = createCustomErrorClass("NoAccessToCamera");
-export const NotEnoughGas = createCustomErrorClass("NotEnoughGas");
-// Error message specifically for the PTX swap flow
-export const NotEnoughGasSwap = createCustomErrorClass("NotEnoughGasSwap");
-export const NotSupportedLegacyAddress = createCustomErrorClass("NotSupportedLegacyAddress");
-export const GasLessThanEstimate = createCustomErrorClass("GasLessThanEstimate");
-
-export const PriorityFeeTooLow = createCustomErrorClass("PriorityFeeTooLow");
-export const PriorityFeeTooHigh = createCustomErrorClass("PriorityFeeTooHigh");
-export const PriorityFeeHigherThanMaxFee = createCustomErrorClass("PriorityFeeHigherThanMaxFee");
-export const MaxFeeTooLow = createCustomErrorClass("MaxFeeTooLow");
-
-export const PasswordsDontMatchError = createCustomErrorClass("PasswordsDontMatch");
-export const PasswordIncorrectError = createCustomErrorClass("PasswordIncorrect");
-
-export const RecommendSubAccountsToEmpty = createCustomErrorClass("RecommendSubAccountsToEmpty");
-export const RecommendUndelegation = createCustomErrorClass("RecommendUndelegation");
-
-export const TimeoutTagged = createCustomErrorClass("TimeoutTagged");
-export const UnexpectedBootloader = createCustomErrorClass("UnexpectedBootloader");
-export const MCUNotGenuineToDashboard = createCustomErrorClass("MCUNotGenuineToDashboard");
-
-export const RecipientRequired = createCustomErrorClass("RecipientRequired");
-export const UpdateFetchFileFail = createCustomErrorClass("UpdateFetchFileFail");
-export const UpdateIncorrectHash = createCustomErrorClass("UpdateIncorrectHash");
-export const UpdateIncorrectSig = createCustomErrorClass("UpdateIncorrectSig");
-export const UpdateYourApp = createCustomErrorClass("UpdateYourApp");
-
-export const UserRefusedDeviceNameChange = createCustomErrorClass("UserRefusedDeviceNameChange");
-export const UserRefusedAddress = createCustomErrorClass("UserRefusedAddress");
-export const UserRefusedFirmwareUpdate = createCustomErrorClass("UserRefusedFirmwareUpdate");
-export const UserRefusedAllowManager = createCustomErrorClass("UserRefusedAllowManager");
-export const UserRefusedOnDevice = createCustomErrorClass("UserRefusedOnDevice"); // TODO rename because it's just for transaction refusal
 
 export const TransportOpenUserCancelled = createCustomErrorClass("TransportOpenUserCancelled");
 export const TransportInterfaceNotAvailable = createCustomErrorClass("TransportInterfaceNotAvailable");
 export const TransportRaceCondition = createCustomErrorClass("TransportRaceCondition");
 export const TransportWebUSBGestureRequired = createCustomErrorClass("TransportWebUSBGestureRequired");
 
-export const TransactionHasBeenValidatedError = createCustomErrorClass("TransactionHasBeenValidatedError");
-export const DeviceShouldStayInApp = createCustomErrorClass("DeviceShouldStayInApp");
-
-export const WebsocketConnectionError = createCustomErrorClass("WebsocketConnectionError");
-export const WebsocketConnectionFailed = createCustomErrorClass("WebsocketConnectionFailed");
-
-export const WrongDeviceForAccount = createCustomErrorClass("WrongDeviceForAccount");
-export const WrongAppForCurrency = createCustomErrorClass("WrongAppForCurrency");
-
-export const ETHAddressNonEIP = createCustomErrorClass("ETHAddressNonEIP");
-export const CantScanQRCode = createCustomErrorClass("CantScanQRCode");
-export const FeeNotLoaded = createCustomErrorClass("FeeNotLoaded");
-export const FeeRequired = createCustomErrorClass("FeeRequired");
-export const FeeTooHigh = createCustomErrorClass("FeeTooHigh");
-export const PendingOperation = createCustomErrorClass("PendingOperation");
-export const SyncError = createCustomErrorClass("SyncError");
-export const PairingFailed = createCustomErrorClass("PairingFailed");
-export const PeerRemovedPairing = createCustomErrorClass("PeerRemovedPairing");
-export const GenuineCheckFailed = createCustomErrorClass("GenuineCheckFailed");
-export const FirmwareOrAppUpdateRequired = createCustomErrorClass("FirmwareOrAppUpdateRequired");
-
-export const ShellAPI = createCustomErrorClass("ShellAPI");
-
-// Language
-export const LanguageNotFound = createCustomErrorClass("LanguageNotFound");
-
-// db stuff, no need to translate
-export const NoDBPathGiven = createCustomErrorClass("NoDBPathGiven");
-export const DBWrongPassword = createCustomErrorClass("DBWrongPassword");
-export const DBNotReset = createCustomErrorClass("DBNotReset");
+export const LockedDeviceError = createCustomErrorClass("LockedDeviceError");
+export const InvalidTxData = createCustomErrorClass("InvalidTxData");
 
 /**
  * Type of a Transport error used to represent all equivalent errors coming from all possible implementation of Transport

@@ -17,28 +17,28 @@
 import type Transport from "./transport";
 import { log } from "./logs";
 import { decodeTxInfo, splitPath } from "./utils";
-import { EthAppPleaseEnableContractData } from "./errors";
+import { InvalidTxData } from "./errors";
 
 export * from "./utils";
 
 const remapTransactionRelatedErrors = (e: any) => {
   if (e && e.statusCode === 0x6a80) {
-    return new EthAppPleaseEnableContractData( "Please enable Blind signing or Contract data in the Ethereum app Settings");
+    return new InvalidTxData("Invalid Transaction Data");
   }
 
   return e;
 };
 
 /**
- * Ethereum API
+ * Shell Commandset API
  *
  * @example
- import ShellJS from "Shelljs";
- const eth = new ShellJS.Eth(transport)
+ import ShellJS from "shelljs";
+ const cmd = new ShellJS.Commands(transport);
  *
  */
 
-export default class Eth {
+export default class Commands {
   transport: Transport;
 
   constructor(transport: Transport) {
@@ -46,17 +46,16 @@ export default class Eth {
   }
 
   /**
-   * get Ethereum address for a given BIP 32 path.
+   * get Public key for a given BIP 32 path.
    * @param path a path in BIP 32 format
-   * @option boolDisplay optionally enable or not the display
    * @option boolChaincode optionally enable or not the chaincode request
-   * @return an object with a publicKey, address and (optionally) chainCode
+   * @return an object with a fingerprint, publicKey and (optionally) chainCode
    *
    * @example
-   const resp = await eth.getAddress("44'/60'/0'/0/0");
+   const resp = await cmd.getPublicKey("44'/60'/0'/0/0");
    console.log(resp.address);
    */
-  async getAddress(path: string, boolDisplay?: boolean, boolChaincode?: boolean): Promise<{ publicKey: string; address: string; chainCode?: string }> {
+  async getPublicKey(path: string, boolChaincode?: boolean): Promise<{fingerprint: string; publicKey: string; chainCode?: string }> {
     const paths = splitPath(path);
     const buffer = Buffer.alloc(1 + paths.length * 4);
 
@@ -67,17 +66,21 @@ export default class Eth {
     });
 
     try {
-      let response = await this.transport.send(0xe0, 0x02, boolDisplay ? 0x01 : 0x00, boolChaincode ? 0x01 : 0x00, buffer);
-      const publicKeyLength = response[0];
-      const addressLength = response[1 + publicKeyLength];
+      let response = await this.transport.send(0xe0, 0x02, 0x00, boolChaincode ? 0x01 : 0x00, buffer);
+      const fingerprintLength = response[0];
+      const publicKeyLength = response[1 + fingerprintLength];
+      const chainLength = response[2 + fingerprintLength + publicKeyLength];
+
+      const publicKeyPosition = 2 + fingerprintLength;
+      const chainCodePosition = 3 + fingerprintLength + publicKeyLength;
 
       return {
-        publicKey: response.subarray(1, 1 + publicKeyLength).toString("hex"),
-        address: "0x" + response.subarray(1 + publicKeyLength + 1, 1 + publicKeyLength + 1 + addressLength).toString("ascii"),
-        chainCode: boolChaincode ? response.subarray(1 + publicKeyLength + 1 + addressLength, 1 + publicKeyLength + 1 + addressLength + 32).toString("hex") : undefined
+        fingerprint: response.subarray(1, 1 + fingerprintLength).toString("hex"), 
+        publicKey: response.subarray(publicKeyPosition, publicKeyPosition + publicKeyLength).toString("hex"),
+        chainCode: boolChaincode ? response.subarray(chainCodePosition, chainCodePosition + chainLength).toString("hex") : undefined
       }
     } catch (error) {
-      log("error", "Couldn't get address", error);
+      log("error", "Couldn't get public key", error);
       throw error;
     }
   }
@@ -91,10 +94,10 @@ export default class Eth {
    *
    * @example
    const tx = "e8018504e3b292008252089428ee52a8f3d6e5d15f8b131996950d7f296c7952872bd72a2487400080"; // raw tx to sign
-   const resp = await eth.signTransaction("44'/60'/0'/0/0", tx);
+   const resp = await cmd.signEthTransaction("44'/60'/0'/0/0", tx);
    console.log(resp);
    */
-  async signTransaction(path: string, rawTxHex: string): Promise<{s: string; v: string;  r: string;}> {
+  async signEthTransaction(path: string, rawTxHex: string): Promise<{s: string; v: string;  r: string;}> {
     const rawTx = Buffer.from(rawTxHex, "hex");
     const { vrsOffset, txType, chainId, chainIdTruncated } = decodeTxInfo(rawTx);
     const paths = splitPath(path);
@@ -162,27 +165,27 @@ export default class Eth {
   }
 
   /**
-  * Get firmware and ERC20 DB version, serial number, publicKey
+  * Get firmware and database version, serial number, publicKey
   *
-  * @return an object with fwVersion, erc20Version, serialNumber, publicKey
+  * @return an object with fwVersion, dbVersion, serialNumber, publicKey
   *
   * @example
-  const {fwVersion, erc20Version, serialNumber, publicKey} = await eth.getAppConfiguration();
+  const {fwVersion, dbVersion, serialNumber, publicKey} = await cmd.getAppConfiguration();
   console.log(fwVersion);
-  console.log(erc20Version);
+  console.log(dbVersion);
   console.log(serialNumber);
   console.log(publicKey);
   *
   */
-  async getAppConfiguration() : Promise<{ fwVersion: string; erc20Version: number; serialNumber: string; publicKey: string }> {
+  async getAppConfiguration() : Promise<{ fwVersion: string; dbVersion: number; serialNumber: string; publicKey: string }> {
     try {
       const response = await this.transport.send(0xe0, 0x06, 0x00, 0x00);
       const fwVersion = String(response[0]) + "." + String(response[1]) + "." + String(response[2]);
-      const erc20Version = (response[3] << 24) | (response[4] << 16) | (response[5] << 8) | response[6];
+      const dbVersion = (response[3] << 24) | (response[4] << 16) | (response[5] << 8) | response[6];
       const serialNumber = response.subarray(7, 23).toString("hex");
       const publicKey = response.subarray(23, 56).toString("hex");
 
-      return { fwVersion, erc20Version, serialNumber, publicKey }
+      return { fwVersion, dbVersion, serialNumber, publicKey }
     } catch (error) {
       log("error", "Couldn't get app configuration", error);
       throw error;
@@ -232,7 +235,7 @@ export default class Eth {
   * @return an object with v, s and r
   *
   * @example
-  const resp = await eth.signPersonalMessage("44'/60'/0'/0/0", "Hello world!");
+  const resp = await cmd.signEthPersonalMessage("44'/60'/0'/0/0", "Hello world!");
   let v = resp['v'] - 27;
   v = v.toString(16);
   if (v.length < 2) {
@@ -240,7 +243,7 @@ export default class Eth {
   }
   console.log("Signature 0x" + resp['r'] + resp['s'] + v);
   */
-  async signPersonalMessage(path: string, pMessage: string, enc="utf-8") : Promise<{ v: number; s: string; r: string; }> {
+  async signEthPersonalMessage(path: string, pMessage: string, enc="utf-8") : Promise<{ v: number; s: string; r: string; }> {
     return this.sendChunks(path, pMessage, 0xe0, 0x08, 0x00, enc);
   }
 
@@ -252,7 +255,7 @@ export default class Eth {
    * @return an object with v, s and r
    *
    * @example
-   const resp = await eth.signEIP712Message("44'/60'/0'/0/0", {
+   const resp = await cmd.signEIP712Message("44'/60'/0'/0/0", {
      domain: {
        chainId: 69,
        name: "Da Domain",
@@ -330,7 +333,7 @@ export default class Eth {
   const fs = require('fs'),
   let f = fs.readFileSync('./firmware.bin');
   let fw = new Uint8Array(f);
-  await eth.loadFirmware(fw);
+  await cmd.loadFirmware(fw);
   *
   */
   async loadFirmware(fw: ArrayBuffer) : Promise<number> {
@@ -345,13 +348,13 @@ export default class Eth {
   *
   * @example
   const fs = require('fs'),
-  let f = fs.readFileSync('./erc20db.bin');
+  let f = fs.readFileSync('./db.bin');
   let db = new Uint8Array(f);
-  await eth.loadERC20DB(db);
+  await cmd.loadDatabase(db);
   *
   */
 
-  async loadERC20DB(db: ArrayBuffer) : Promise<number> {
+  async loadDatabase(db: ArrayBuffer) : Promise<number> {
     return await this.load(Buffer.from(db), 0xf4);
   }
 }

@@ -1,12 +1,12 @@
 ## ShellJS
 
-Keycard Pro Library based on [@ledgerhq/hw-app-eth](@ledgerhq/hw-app-eth) and [@ledgerhq/hw-transport](@ledgerhq/hw-transport).
+Keycard Shell Library based on [@ledgerhq/hw-app-eth](@ledgerhq/hw-app-eth) and [@ledgerhq/hw-transport](@ledgerhq/hw-transport).
 
 ***
 
 ## Who should use ShellJS?
 
-ShellJS permits you to communicate with Keycard Pro through websites and through nodejs-based native applications.
+ShellJS permits you to communicate with Keycard Shell through websites and through nodejs-based native applications.
 
 ***
 
@@ -16,17 +16,17 @@ ShellJS permits you to communicate with Keycard Pro through websites and through
 
 #### Table of Contents
 
-*   [Eth](#eth)
+*   [Commands](#cmd)
     *   [Parameters](#parameters)
     *   [Examples](#examples)
-    *   [getAddress](#getaddress)
+    *   [getPublicKey](#getpublickey)
         *   [Parameters](#parameters-1)
         *   [Examples](#examples-1)
-    *   [signTransaction](#signtransaction)
+    *   [signEthTransaction](#signethtransaction)
         *   [Parameters](#parameters-2)
         *   [Examples](#examples-2)
     *   [getAppConfiguration](#getappconfiguration)
-    *   [signPersonalMessage](#signpersonalmessage)
+    *   [signEthPersonalMessage](#signethpersonalmessage)
         *   [Parameters](#parameters-4)
         *   [Examples](#examples-4)
     *   [signEIP712Message](#signeip712message)
@@ -35,12 +35,12 @@ ShellJS permits you to communicate with Keycard Pro through websites and through
     *   [loadFirmware](#loadfirmware)
         *   [Parameters](#parameters-7)
         *   [Examples](#examples-7)
-    *   [loadERC20DB](#loaderc20db)
+    *   [loadDatabase](#loaddatabase)
         *   [Parameters](#parameters-8)
         *   [Examples](#examples-8)
 
 
-### Eth
+### Commands
 
 Ethereum API
 
@@ -52,29 +52,28 @@ Ethereum API
 
 ```javascript
 import ShellJS from "Shelljs";
-const eth = new ShellJS.Eth(transport)
+const cmd = new ShellJS.Commands(transport);
 ```
 
-#### getAddress
+#### getPublicKey
 
-get Ethereum address for a given BIP 32 path.
+get public key for a given BIP 32 path.
 
 ##### Parameters
 
 *   `path` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** a path in BIP 32 format
-*   `boolDisplay` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)?**
 *   `boolChaincode` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)?**
 
 ##### Examples
 
 ```javascript
-const resp = await eth.getAddress("44'/60'/0'/0/0");
+const resp = await cmd.getPublicKey("44'/60'/0'/0/0");
 console.log(resp.address);
 ```
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{publicKey: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), address: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), chainCode: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)?}>** an object with a publicKey, address and (optionally) chainCode
 
-#### signTransaction
+#### signEthTransaction
 
 sign a transaction and retrieve v, r, s given the raw transaction and the BIP 32 path of the account to sign.
 
@@ -87,7 +86,7 @@ sign a transaction and retrieve v, r, s given the raw transaction and the BIP 32
 
 ```javascript
 const tx = "e8018504e3b292008252089428ee52a8f3d6e5d15f8b131996950d7f296c7952872bd72a2487400080"; // raw tx to sign
-const resp = eth.signTransaction("44'/60'/0'/0/0", tx);
+const resp = cmd.signEthTransaction("44'/60'/0'/0/0", tx);
 console.log(resp);
 ```
 
@@ -95,21 +94,21 @@ Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 #### getAppConfiguration
 
-get firmware and ERC20 DB version installed on the Keycard Pro device.
+get firmware and database version installed on the Keycard Shell device.
 
 ##### Examples
 
 ```javascript
-const {fwVersion, erc20Version} = await eth.getAppConfiguration();
+const {fwVersion, dbVersion} = await cmd.getAppConfiguration();
 console.log(fwVersion);
-console.log(erc20Version);
+console.log(dbVersion);
 ```
 
-Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{fwVersion: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), erc20Version: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)}>**
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{fwVersion: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), dbVersion: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)}>**
 
-#### signPersonalMessage
+#### signEthPersonalMessage
 
-sign a personal message and retrieve v, r, s given the message and the BIP 32 path of the account to sign.
+sign an Eth personal message and retrieve v, r, s given the message and the BIP 32 path of the account to sign.
 
 ##### Parameters
 
@@ -120,7 +119,7 @@ sign a personal message and retrieve v, r, s given the message and the BIP 32 pa
 ##### Examples
 
 ```javascript
-const resp = await eth.signPersonalMessage("44'/60'/0'/0/0", "Hello world!");
+const resp = await cmd.signEthPersonalMessage("44'/60'/0'/0/0", "Hello world!");
 let v = resp['v'] - 27;
 v = v.toString(16);
 if (v.length < 2) {
@@ -143,7 +142,7 @@ sign an EIP-712 formatted message
 ##### Examples
 
 ```javascript
-const resp = await eth.signEIP712Message("44'/60'/0'/0/0", {
+const resp = await cmd.signEIP712Message("44'/60'/0'/0/0", {
 domain: {
 chainId: 69,
 name: "Da Domain",
@@ -170,7 +169,7 @@ Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 #### loadFirmware
 
-load Keycard Pro firmware
+load Keycard Shell firmware
 
 ##### Parameters
 
@@ -183,34 +182,33 @@ load Keycard Pro firmware
 const fs = require('fs'),
 let f = fs.readFileSync('./firmware.bin');
 let fw = new Uint8Array(f);
-await eth.loadFirmware(fw);
+await cmd.loadFirmware(fw);
 ```
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>**
 
-#### loadERC20DB
+#### loadDatabase
 
-load ERC20 & chain database
+load Keycard Shell database
 
 ##### Parameters
 
-*   `db` **[ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)** ERC20 & Chain DB
-
+*   `db` **[ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)** database
 
 ##### Examples
 
 ```javascript
 const fs = require('fs'),
-let f = fs.readFileSync('./erc20db.bin');
+let f = fs.readFileSync('./db.bin');
 let db = new Uint8Array(f);
-await eth.loadERC20DB(db);
+await cmd.loadDatabase(db);
 ```
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>**
 
 ## Live Demo
 
-You can check a demo at [Shell Web HID Example Page](https://choppu.github.io/Shelljs-example/).
+You can check a demo at [Shell Web HID Example Page](https://choppu.github.io/shelljs-example/).
 
 
 

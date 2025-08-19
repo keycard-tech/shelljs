@@ -1,4 +1,4 @@
-import Eth from "./eth"
+import Commands from "./commands"
 import Transport from "./transport"
 import { ShellDevice } from "./device"
 import * as ShellError from "./errors"
@@ -16,7 +16,7 @@ import type * as TransportTypes from "./types/transport-types"
 
 
 export let ShellJS = {
-  Eth: Eth,
+  Commands: Commands,
   ShellDevice: ShellDevice,
   ShellError: ShellError,
   ShellErrorHelpers: ShellErrorHelpers,
