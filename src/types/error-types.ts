@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
-export interface KProErrorConstructor<F extends { [key: string]: unknown }>
+export interface ShellErrorConstructor<F extends { [key: string]: unknown }>
   extends ErrorConstructor {
   new (message?: string, fields?: F, options?: any): Error;
   (message?: string, fields?: F, options?: any): Error;

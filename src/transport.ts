@@ -24,7 +24,7 @@ import { LocalTracer } from "./logs";
 const DEFAULT_LOG_TYPE = "transport";
 
 /**
- * The Transport class defines a generic interface for communicating with a KPro hardware wallet.
+ * The Transport class defines a generic interface for communicating with a Shell hardware wallet.
  * There are different kind of transports based on the technology (channels like U2F, HID, Bluetooth, Webusb) and environment (Node, Web,...).
  * It is an abstract class that needs to be implemented.
  */
@@ -244,7 +244,7 @@ export default class Transport {
   exchangeAtomicImpl = async (f: () => Promise<Buffer | void>): Promise<Buffer | void> => {
     if (this.exchangeBusyPromise) {
       throw new TransportRaceCondition(
-        "An action was already pending on the KPro device. Please deny or reconnect.",
+        "An action was already pending on the Shell device. Please deny or reconnect.",
       );
     }
 
@@ -275,6 +275,6 @@ export default class Transport {
     }
   };
 
-  static ErrorMessage_ListenTimeout = "No KPro device found (timeout)";
-  static ErrorMessage_NoDeviceFound = "No KPro device found";
+  static ErrorMessage_ListenTimeout = "No Shell device found (timeout)";
+  static ErrorMessage_NoDeviceFound = "No Shell device found";
 }

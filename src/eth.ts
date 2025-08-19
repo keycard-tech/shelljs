@@ -33,8 +33,8 @@ const remapTransactionRelatedErrors = (e: any) => {
  * Ethereum API
  *
  * @example
- import KProJS from "kprojs";
- const eth = new KProJS.Eth(transport)
+ import ShellJS from "Shelljs";
+ const eth = new ShellJS.Eth(transport)
  *
  */
 

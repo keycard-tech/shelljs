@@ -15,7 +15,7 @@
  *  limitations under the License.
  ********************************************************************************/
 import { serializeError, deserializeError, createCustomErrorClass, addCustomErrorDeserializer } from "./error-helpers";
-import { KProErrorConstructor } from "./types/error-types";
+import { ShellErrorConstructor } from "./types/error-types";
 export { serializeError, deserializeError, createCustomErrorClass, addCustomErrorDeserializer };
 
 export const AccountNameRequiredError = createCustomErrorClass("AccountNameRequired");
@@ -26,7 +26,7 @@ export const CantOpenDevice = createCustomErrorClass("CantOpenDevice");
 export const CashAddrNotSupported = createCustomErrorClass("CashAddrNotSupported");
 export const ClaimRewardsFeesWarning = createCustomErrorClass("ClaimRewardsFeesWarning");
 
-export const CurrencyNotSupported = createCustomErrorClass< { currencyName: string }, KProErrorConstructor<{ currencyName: string }> >("CurrencyNotSupported");
+export const CurrencyNotSupported = createCustomErrorClass< { currencyName: string }, ShellErrorConstructor<{ currencyName: string }> >("CurrencyNotSupported");
 
 export const DeviceAppVerifyNotSupported = createCustomErrorClass("DeviceAppVerifyNotSupported");
 export const DeviceGenuineSocketEarlyClose = createCustomErrorClass("DeviceGenuineSocketEarlyClose");
@@ -60,9 +60,9 @@ export const InvalidAddressBecauseDestinationIsAlsoSource = createCustomErrorCla
 export const LatestMCUInstalledError = createCustomErrorClass("LatestMCUInstalledError");
 export const UnknownMCU = createCustomErrorClass("UnknownMCU");
 
-export const KProAPIError = createCustomErrorClass("KProAPIError");
-export const KProAPIErrorWithMessage = createCustomErrorClass("KProAPIErrorWithMessage");
-export const KProAPINotAvailable = createCustomErrorClass("KProAPINotAvailable");
+export const ShellAPIError = createCustomErrorClass("ShellAPIError");
+export const ShellAPIErrorWithMessage = createCustomErrorClass("ShellAPIErrorWithMessage");
+export const ShellAPINotAvailable = createCustomErrorClass("ShellAPINotAvailable");
 
 export const ManagerAppAlreadyInstalledError = createCustomErrorClass("ManagerAppAlreadyInstalled");
 export const ManagerAppDepInstallRequired = createCustomErrorClass("ManagerAppDepInstallRequired");
@@ -139,7 +139,7 @@ export const PeerRemovedPairing = createCustomErrorClass("PeerRemovedPairing");
 export const GenuineCheckFailed = createCustomErrorClass("GenuineCheckFailed");
 export const FirmwareOrAppUpdateRequired = createCustomErrorClass("FirmwareOrAppUpdateRequired");
 
-export const KProAPI = createCustomErrorClass("KProAPI");
+export const ShellAPI = createCustomErrorClass("ShellAPI");
 
 // Language
 export const LanguageNotFound = createCustomErrorClass("LanguageNotFound");
@@ -275,7 +275,7 @@ export class TransportStatusError extends Error {
     const statusText = Object.keys(StatusCodes).find(k  => StatusCodes[k as keyof typeof StatusCodes] === statusCode) || "UNKNOWN_ERROR";
     const smsg = getAltStatusMessage(statusCode) || statusText;
     const statusCodeStr = statusCode.toString(16);
-    const message = `KPro device: ${smsg} (0x${statusCodeStr})`;
+    const message = `Shell device: ${smsg} (0x${statusCodeStr})`;
 
     // Maps to a LockedDeviceError
     if (statusCode === StatusCodes.LOCKED_DEVICE) {

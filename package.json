@@ -1,7 +1,7 @@
 {
-  "name": "kprojs",
+  "name": "shell-js",
   "version": "1.0.0",
-  "description": "Keycard Pro Library based on LedgerJS",
+  "description": "Keycard Shell Communication Layer",
   "main": "lib/index.js",
   "module": "lib-es/index.js",
   "browser": "lib-es/index.js",

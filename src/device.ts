@@ -16,10 +16,10 @@
  ********************************************************************************/
 import { DeviceModel } from "./types/device-types";
 
-export namespace KProDevice {
+export namespace ShellDevice {
   const device: DeviceModel = {
     id: 0,
-    productName: "Keycard Pro",
+    productName: "Keycard Shell",
     productId: 0x0001
   }
 

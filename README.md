@@ -1,12 +1,12 @@
-## KProJS
+## ShellJS
 
 Keycard Pro Library based on [@ledgerhq/hw-app-eth](@ledgerhq/hw-app-eth) and [@ledgerhq/hw-transport](@ledgerhq/hw-transport).
 
 ***
 
-## Who should use KProJS?
+## Who should use ShellJS?
 
-KProJS permits you to communicate with Keycard Pro through websites and through nodejs-based native applications.
+ShellJS permits you to communicate with Keycard Pro through websites and through nodejs-based native applications.
 
 ***
 
@@ -51,8 +51,8 @@ Ethereum API
 #### Examples
 
 ```javascript
-import KProJS from "kprojs";
-const eth = new KProJS.Eth(transport)
+import ShellJS from "Shelljs";
+const eth = new ShellJS.Eth(transport)
 ```
 
 #### getAddress
@@ -210,7 +210,7 @@ Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 ## Live Demo
 
-You can check a demo at [KPro Web HID Example Page](https://choppu.github.io/kprojs-example/).
+You can check a demo at [Shell Web HID Example Page](https://choppu.github.io/Shelljs-example/).
 
 
 

@@ -20,7 +20,7 @@ import { ResponseAcc } from "./types/hid-types";
 
 const Tag = 0x05;
 
-export const kproUSBVendorId = 0x1209;
+export const shellUSBVendorId = 0x1209;
 
 const asUInt16BE = (value: any) : any => {
   const b = Buffer.alloc(2);

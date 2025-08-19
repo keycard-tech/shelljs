@@ -71,12 +71,12 @@ const dispatch = (log: Log): void => {
 
 declare global {
   interface Window {
-    __kproLogsListen: any;
+    __shellLogsListen: any;
   }
 }
 
 if (typeof window !== "undefined") {
-  window.__kproLogsListen = listen;
+  window.__shellLogsListen = listen;
 }
 
 export const trace = ({

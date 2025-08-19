@@ -1,11 +1,11 @@
 import Eth from "./eth"
 import Transport from "./transport"
-import { KProDevice } from "./device"
-import * as KProError from "./errors"
-import * as KProErrorHelpers from "./error-helpers"
+import { ShellDevice } from "./device"
+import * as ShellError from "./errors"
+import * as ShellErrorHelpers from "./error-helpers"
 import * as HIDFraming from "./hid-framing"
-import * as KProLogs from "./logs"
-import * as KProPromise from "./promise"
+import * as ShellLogs from "./logs"
+import * as ShellPromise from "./promise"
 
 import type * as DeviceTypes from "./types/device-types"
 import type * as ErrorTypes from "./types/error-types"
@@ -15,16 +15,16 @@ import type * as PromiseTypes from "./types/promise-types"
 import type * as TransportTypes from "./types/transport-types"
 
 
-export let KProJS = {
+export let ShellJS = {
   Eth: Eth,
-  KProDevice: KProDevice,
-  KProError: KProError,
-  KProErrorHelpers: KProErrorHelpers,
+  ShellDevice: ShellDevice,
+  ShellError: ShellError,
+  ShellErrorHelpers: ShellErrorHelpers,
   HIDFraming: HIDFraming,
-  KProLogs: KProLogs,
-  KProPromise: KProPromise,
+  ShellLogs: ShellLogs,
+  ShellPromise: ShellPromise,
   Transport: Transport,
 }
 
 export { DeviceTypes, ErrorTypes, TransportTypes, LogsTypes, HIDTypes, PromiseTypes} ;
-export default KProJS;
+export default ShellJS;

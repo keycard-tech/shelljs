@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
-import { KProErrorConstructor, To } from "./types/error-types";
+import { ShellErrorConstructor, To } from "./types/error-types";
 
 const errorClasses: any = {};
 const deserializers: any = {};
@@ -27,7 +27,7 @@ export const addCustomErrorDeserializer = (name: string, deserializer: (obj: any
   deserializers[name] = deserializer;
 };
 
-export const createCustomErrorClass = <F extends { [key: string]: unknown },  T extends KProErrorConstructor<F>> ( name: string): T => {
+export const createCustomErrorClass = <F extends { [key: string]: unknown },  T extends ShellErrorConstructor<F>> ( name: string): T => {
   class CustomErrorClass extends Error {
     cause?: Error;
     constructor(message?: string, fields?: F, options?: any) {
