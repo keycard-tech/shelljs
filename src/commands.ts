@@ -291,6 +291,51 @@ export default class Commands {
     return this.sendChunks(path, messageStr, APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P2, "utf-8");
   }
 
+  /**
+   * Sign a PSBT
+   *
+   * @param {ArrayBuffer} psbt PSBT to sign
+   * @return an ArrayBuffer
+   *
+   * @example
+   const psbt = new ArrayBuffer();
+   const resp = await cmd.signPSBT(psbt);
+   console.log(resp);
+   *
+   */
+  async signPSBT(psbt: ArrayBuffer): Promise<ArrayBuffer> {
+    const message = Buffer.from(psbt);
+
+    enum APDU_FIELDS {
+      CLA = 0xe0,
+      INS = 0x0e,
+      P1 = 0x00,
+      P2 = 0x00
+    }
+
+    let offset = 0;
+    let response: any;
+
+    while (offset !== message.length) {
+      const maxChunkSize = offset === 0 ? 255 - 4 : 255;
+      const chunkSize = offset + maxChunkSize > message.length ? message.length - offset : maxChunkSize;
+      const buffer = Buffer.alloc(chunkSize);
+
+      if (offset === 0) {
+        buffer.writeUInt32BE(message.length, 0);
+        message.copy(buffer, 4, offset, offset + chunkSize);
+      } else {
+        message.copy(buffer, 0, offset, offset + chunkSize);
+      }
+
+      response = await this.transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1, APDU_FIELDS.P2, buffer);
+
+      offset += chunkSize;
+    }
+
+    return response;
+  }
+
   private async load(data: Buffer, ins: number) : Promise<number> {
     let offset = 0;
     let response: any;
