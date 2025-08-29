@@ -1,5 +1,5 @@
 {
-  "name": "shell-js",
+  "name": "@choppu/shelljs",
   "version": "1.0.0",
   "description": "Keycard Shell Communication Layer",
   "main": "lib/index.js",
@@ -13,9 +13,9 @@
   "scripts": {
     "build": "tsc && tsc -m ES6 --outDir lib-es",
     "prepare": "npm run build",
-    "clean": "rm -rf node_modules lib lib-es",
+    "clean": "rm -rf lib lib-es",
     "test": "jest",
-    "publish": "npm run clean && npm run build && npm publish --registry=https://registry.npmjs.org/"
+    "publish": "npm run clean && npm run build && npm publish --access=public"
   },
   "author": "Ksenia Lebedeva",
   "devDependencies": {
