@@ -199,7 +199,7 @@ export default class Transport {
     let sw = response.readUInt16BE(response.length - 2);
     
     while((sw & 0xFF00) == GET_RESPONSE_CODE)  {
-        let tmp = await this.exchange(Buffer.from([cla, GET_RESPONSE_INS, p1, p2, 0]));
+        let tmp = await this.exchange(Buffer.from([cla, GET_RESPONSE_INS, 0, 0, 0]));
         sw = tmp.readUInt16BE(tmp.length - 2);
         response = Buffer.concat([response.subarray(0, -2), tmp]);
     }
