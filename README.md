@@ -16,7 +16,7 @@ ShellJS permits you to communicate with Keycard Shell through websites and throu
 
 #### Table of Contents
 
-*   [Commands](#cmd)
+*   [Commands](#commands)
     *   [Parameters](#parameters)
     *   [Examples](#examples)
     *   [getPublicKey](#getpublickey)
@@ -26,17 +26,21 @@ ShellJS permits you to communicate with Keycard Shell through websites and throu
         *   [Parameters](#parameters-2)
         *   [Examples](#examples-2)
     *   [getAppConfiguration](#getappconfiguration)
+        *    [Examples](#examples-3)
+    *   [signPSBT](#signPSBT)
+        *   [Parameters](#parameters-3)
+        *   [Examples](#examples-4)
     *   [signEthPersonalMessage](#signethpersonalmessage)
         *   [Parameters](#parameters-4)
-        *   [Examples](#examples-4)
+        *   [Examples](#examples-5)
     *   [signEIP712Message](#signeip712message)
-        *   [Parameters](#parameters-6)
+        *   [Parameters](#parameters-5)
         *   [Examples](#examples-6)
     *   [loadFirmware](#loadfirmware)
-        *   [Parameters](#parameters-7)
+        *   [Parameters](#parameters-6)
         *   [Examples](#examples-7)
     *   [loadDatabase](#loaddatabase)
-        *   [Parameters](#parameters-8)
+        *   [Parameters](#parameters-7)
         *   [Examples](#examples-8)
 
 
@@ -94,17 +98,36 @@ Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 #### getAppConfiguration
 
-get firmware and database version installed on the Keycard Shell device.
+get firmware and database version installed on device, Keycard Shell serial number and public key.
 
 ##### Examples
 
 ```javascript
-const {fwVersion, dbVersion} = await cmd.getAppConfiguration();
+const {fwVersion, dbVersion, serialNumber, publicKey} = await cmd.getAppConfiguration();
 console.log(fwVersion);
 console.log(dbVersion);
+console.log(serialNumber);
+console.log(publicKey);
 ```
 
-Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{fwVersion: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), dbVersion: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)}>**
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{fwVersion: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), dbVersion: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number), serialNumber: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), publicKey: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)}>**
+
+#### signPSBT
+
+sign a PSBT and return signed PSBT.
+
+##### Parameters
+
+*   `psbt` **[ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)** : partially signed bitcoin transaction
+
+##### Examples
+
+```javascript
+const resp = await cmd.signPSBT(psbt);
+console.log(resp);
+```
+
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<[ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)>**
 
 #### signEthPersonalMessage
 
