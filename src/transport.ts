@@ -22,6 +22,8 @@ import { TraceContext, LogType } from "./types/logs-types";
 import { LocalTracer } from "./logs";
 
 const DEFAULT_LOG_TYPE = "transport";
+const GET_RESPONSE_INS = 0xc0;
+const GET_RESPONSE_CODE = 0x6100;
 
 /**
  * The Transport class defines a generic interface for communicating with a Shell hardware wallet.
@@ -193,15 +195,21 @@ export default class Transport {
       );
     }
 
-    const response = await this.exchange(Buffer.concat([Buffer.from([cla, ins, p1, p2]), Buffer.from([data.length]), data]));
-    const sw = response.readUInt16BE(response.length - 2);
+    let response = await this.exchange(Buffer.concat([Buffer.from([cla, ins, p1, p2]), Buffer.from([data.length]), data]));
+    let sw = response.readUInt16BE(response.length - 2);
+    
+    while((sw & 0xFF00) == GET_RESPONSE_CODE)  {
+        let tmp = await this.exchange(Buffer.from([cla, GET_RESPONSE_INS, 0, 0, 0]));
+        sw = tmp.readUInt16BE(tmp.length - 2);
+        response = Buffer.concat([response.subarray(0, -2), tmp]);
+    }
 
     if (!statusList.some(s => s === sw)) {
       throw new TransportStatusError(sw);
     }
 
     return response;
-  };
+  }
 
   /**
    * create() allows to open the first descriptor available or
