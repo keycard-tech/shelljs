@@ -6,14 +6,18 @@
   "module": "lib-es/index.js",
   "browser": "lib-es/index.js",
   "types": "lib/index.d.ts",
+  "repository": {
+    "url": "https://github.com/choppu/shelljs.git"
+  },
   "license": "Apache-2.0",
   "scripts": {
     "build": "tsc && tsc -m ES6 --outDir lib-es",
     "prepare": "npm run build",
-    "clean": "rimraf lib lib-es",
-    "test": "jest"
+    "clean": "rm -rf node_modules lib lib-es",
+    "test": "jest",
+    "publish": "npm run clean && npm run build && npm publish --registry=https://registry.npmjs.org/"
   },
-  "author": "",
+  "author": "Ksenia Lebedeva",
   "devDependencies": {
     "@types/node": "^20.5.1",
     "@types/w3c-web-hid": "^1.0.3",
