@@ -1,6 +1,6 @@
 {
   "name": "@choppu/shelljs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Keycard Shell Communication Layer",
   "main": "lib/index.js",
   "module": "lib-es/index.js",
