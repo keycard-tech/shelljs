@@ -18,26 +18,38 @@ import { encode, decode } from "@ethersproject/rlp";
 import { BigNumber } from "bignumber.js";
 
 export const splitPath = (path: string): number[] => {
-  const result: number[] = [];
   const components = path.split("/");
-  components.forEach(element => {
-    let number = parseInt(element, 10);
-    if (isNaN(number)) {
-      return; // FIXME shouldn't it throws instead?
+  if (components[0] === "m") {
+    components.shift();
+  }
+
+  const result = components.map(element => {
+    const hardened = element.endsWith("'");
+    const digits = hardened ? element.slice(0, -1) : element;
+    const value = Number(digits) + (hardened ? 0x80000000 : 0);
+
+    if (!/^[0-9]+$/.test(digits) || value > 0xffffffff) {
+      throw new Error(`Invalid BIP-32 path component "${element}" in path "${path}"`);
     }
 
-    if (element.length > 1 && element[element.length - 1] === "'") {
-      number += 0x80000000;
-    }
-
-    result.push(number);
+    return value;
   });
+
+  if (!result.length) {
+    throw new Error("Empty derivation path");
+  }
 
   return result;
 }
 
 export const hexBuffer = (str: string): Buffer => {
-  return Buffer.from(str.startsWith("0x") ? str.slice(2) : str, "hex");
+  const hex = str.startsWith("0x") ? str.slice(2) : str;
+
+  if (!/^[0-9a-fA-F]*$/.test(hex) || hex.length % 2 !== 0) {
+    throw new Error(`Invalid hex string "${str}"`);
+  }
+
+  return Buffer.from(hex, "hex");
 }
 
 export const maybeHexBuffer = (str: string | null | undefined): Buffer | null | undefined => {
@@ -130,8 +142,13 @@ export const decodeTxInfo = (rawTx: Buffer) : any => {
  * @param bytes Number of bytes it should be represented as (1 byte = 2 caraters)
  * @returns The given integer as an hexa string padded with the right number of 0
  */
-export const intAsHexBytes = (int: number, bytes: number): string =>
-  int.toString(16).padStart(2 * bytes, "0");
+export const intAsHexBytes = (int: number, bytes: number): string => {
+  if (!Number.isInteger(int) || int < 0 || int >= Math.pow(2, 8 * bytes)) {
+    throw new Error(`${int} does not fit in ${bytes} bytes`);
+  }
+
+  return int.toString(16).padStart(2 * bytes, "0");
+};
 
 /**
  * @ignore for the README

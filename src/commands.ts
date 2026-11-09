@@ -355,10 +355,6 @@ export default class Commands {
       offset += chunkSize;
     }
 
-    if (!response || response.length < STATUS_WORD_BYTES) {
-      throw malformed("signPSBT", response, STATUS_WORD_BYTES);
-    }
-
     return response.subarray(0, -2);
   }
 
@@ -389,10 +385,6 @@ export default class Commands {
       this.transport.emit("chunk-loaded", chunkSize);
 
       offset += chunkSize;
-    }
-
-    if (!response || response.length < STATUS_WORD_BYTES) {
-      throw malformed("load", response, STATUS_WORD_BYTES);
     }
 
     return (response[0] << 8) | response[1];
