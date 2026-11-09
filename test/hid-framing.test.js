@@ -1,11 +1,5 @@
-/**
- * HID framing: the CHIPv1-ish block layer between APDUs and 64-byte HID reports.
- *
- * Contract:
- *   block = [channel:u16BE][tag 0x05][sequence:u16BE][payload]
- *   the first block's payload is [apduLength:u16BE][apdu bytes...]
- *   every block is padded to packetSize; payload size is packetSize - 5.
- */
+// Framing: block = [channel:u16BE][tag 0x05][seq:u16BE][payload]; the first payload carries [apduLength:u16BE][apdu].
+
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -43,7 +37,7 @@ describe("makeBlocks", () => {
   });
 
   test("splits a large APDU across blocks with an incrementing sequence number", () => {
-    const apdu = Buffer.alloc(200, 0xab); // 2 bytes of length prefix -> 202 -> 4 blocks
+    const apdu = Buffer.alloc(200, 0xab);
     const blocks = hidFraming(CHANNEL, PACKET).makeBlocks(apdu);
 
     assert.equal(blocks.length, Math.ceil((apdu.length + 2) / BLOCK_PAYLOAD));
@@ -87,8 +81,7 @@ describe("makeBlocks", () => {
 });
 
 describe("reduceResponse", () => {
-  // The length field of the first block declares the TOTAL response length,
-  // not the size of that first block.
+  // The length field of the first block declares the TOTAL response length, not that block's size.
   const firstBlock = (data, { total = data.length, channel = CHANNEL, tag = 0x05, seq = 0 } = {}) =>
     Buffer.concat([blockHeader(channel, tag, seq), Uint8Array.from([(total >> 8) & 0xff, total & 0xff]), data]);
   const nextBlock = (data, seq = 1, opts = {}) =>

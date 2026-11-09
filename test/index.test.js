@@ -1,11 +1,5 @@
-/**
- * Public surface.
- *
- * shelljs-node-hid and shelljs-web-hid both consume the package as
- * `import ShellJS from "@choppu/shelljs"` and reach for ShellJS.Transport,
- * ShellJS.ShellDevice, ShellJS.ShellError, ShellJS.HIDFraming and
- * ShellJS.ShellLogs. These tests pin that contract.
- */
+// Public surface consumed by shelljs-node-hid / shelljs-web-hid as ShellJS.<Member>.
+
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -42,8 +36,7 @@ describe("package entry point", () => {
   });
 
   test("the Transport API transports subclass is present", () => {
-    // send / exchangeAtomicImpl are instance fields (arrow functions), so they
-    // have to be checked on an instance rather than on the prototype.
+    // send / exchangeAtomicImpl are instance fields, so they cannot be found on the prototype.
     const instance = new ShellJS.Transport();
     for (const method of ["send", "exchange", "close", "on", "off", "emit", "exchangeBulk", "exchangeAtomicImpl"]) {
       assert.equal(typeof instance[method], "function", `Transport#${method}`);

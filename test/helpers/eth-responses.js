@@ -1,8 +1,5 @@
-/**
- * Well-formed device replies, built to the exact wire layout each command parses.
- * Keeping them in one place means a change in the parsing code shows up as a
- * failing test rather than a silently "successful" garbage value.
- */
+// Well-formed device replies, built to the wire layout each command parses.
+
 const { reply } = require("./mock-device");
 
 /** [fpLen][fp][pkLen][pubkey][ccLen][chaincode] */
@@ -23,11 +20,7 @@ const publicKeyPayload = ({ fingerprint = "01020304", publicKey = "03" + "aa".re
 const signaturePayload = ({ v = 0x01, r = "11".repeat(32), s = "22".repeat(32) } = {}) =>
   Buffer.concat([Uint8Array.from([v]), Buffer.from(r, "hex"), Buffer.from(s, "hex")]);
 
-/**
- * getAppConfiguration payload:
- * [fwMajor][fwMinor][fwPatch][dbVersion(4)][serial(16)][devicePubKey(33)](+[fwVariant][fwBeta])
- * @param {boolean} extended add the fwVariant/fwBeta trailer (firmware >= 1.2 style replies)
- */
+// getAppConfiguration payload: [fw(3)][db(4)][serial(16)][pubkey(33)] (+ [fwVariant][fwBeta] when extended).
 const appConfigPayload = ({
   fw = [3, 0, 4],
   db = 0x00010203,
@@ -54,7 +47,6 @@ const appConfigPayload = ({
 /** A PSBT-ish blob: "psbt" magic + deterministic filler. */
 const psbtBlob = bytes => Buffer.concat([Buffer.from("70736274ff", "hex"), Buffer.alloc(bytes, 0x5a)]);
 
-/** Firmware / database blob of a given size. */
 const blob = bytes => Buffer.from(Array.from({ length: bytes }, (_, i) => (i * 7 + 3) % 256));
 
 module.exports = { publicKeyPayload, signaturePayload, appConfigPayload, psbtBlob, blob, reply };

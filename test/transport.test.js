@@ -1,17 +1,5 @@
-/**
- * Transport.
- *
- * Contracts under test, taken from the class JSDoc and the APDU protocol:
- *  - send(cla, ins, p1, p2, data) writes [cla ins p1 p2 lc data] and resolves
- *    with the device response *including* its trailing status word.
- *  - data must fit the one-byte Lc field.
- *  - a status outside the accepted list rejects with TransportStatusError.
- *  - a 0x61xx status means "send GET RESPONSE"; the response continues until a
- *    terminal status.
- *  - exchange() is abstract; exchangeAtomicImpl() serialises access to the device.
- *  - create() opens the first descriptor reported by listen().
- *  - Everything coming back from the device is untrusted input.
- */
+// Transport: APDU encoding, status handling, GET RESPONSE chaining, atomicity, events and create().
+
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -409,7 +397,7 @@ describe("exchange timeout", () => {
   test("an exchange that never answers is cut off by the configured exchange timeout", async () => {
     class DeafTransport extends Transport {
       exchange() {
-        return new Promise(() => {}); // never settles
+        return new Promise(() => {});
       }
     }
     const t = new DeafTransport();

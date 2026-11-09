@@ -1,6 +1,5 @@
-/**
- * ShellDevice: mapping USB product ids / product names to a known model.
- */
+// ShellDevice: mapping USB product ids / product names to a known model.
+
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 

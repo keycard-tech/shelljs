@@ -1,15 +1,5 @@
-/**
- * Transport test doubles.
- *
- * Design rules:
- *  - They model a real secure element, not the implementation: one logical
- *    command in flight, GET RESPONSE returns the REMAINING bytes of the staged
- *    response, status word appended to every reply.
- *  - They treat everything coming back from the device as untrusted input, so
- *    tests can hand back truncated, oversized or nonsensical replies.
- *  - They never let a test hang: a hard exchange budget rejects instead of
- *    spinning forever.
- */
+// Transport doubles that model a real secure element; device output is untrusted and mocks cannot hang.
+
 const Transport = require("../../lib/transport.js").default;
 const { TransportStatusError } = require("../../lib/errors.js");
 
@@ -38,7 +28,6 @@ const toBuf = value => {
 const reply = (payload = Buffer.alloc(0), sw = SW.OK) =>
   Buffer.concat([toBuf(payload), Uint8Array.from([(sw >> 8) & 0xff, sw & 0xff])]);
 
-/** Split an outgoing APDU into header, Lc and data. */
 const parseApdu = apdu => ({
   cla: apdu[0],
   ins: apdu[1],
@@ -90,7 +79,6 @@ class MockTransportBase extends Transport {
   }
 }
 
-/** Stateless mock: the reply is a pure function of the APDU. */
 class MockTransport extends MockTransportBase {
   constructor(handler, opts = {}) {
     super(opts);
@@ -116,19 +104,7 @@ class ScriptedTransport extends MockTransportBase {
   }
 }
 
-/**
- * Secure element emulator.
- *
- * Models the two properties that matter for multi-exchange commands:
- *  - a single staging register for a pending response;
- *  - GET RESPONSE (INS 0xc0) returns the *remaining* staged bytes, and any other
- *    command discards them (as a real applet does).
- *
- * An applet handler returns either:
- *   { response, sw }                        -> single-exchange reply
- *   { response, remaining }                 -> reply with 0x61xx, rest via GET RESPONSE
- *   { error }                               -> throw that error
- */
+// Secure element emulator: GET RESPONSE (0xc0) returns the staged remainder and any other command discards it; handlers return {response, sw} | {response, remaining} | {error}.
 class SecureElementTransport extends MockTransportBase {
   constructor(applet, opts = {}) {
     super(opts);

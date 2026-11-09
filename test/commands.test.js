@@ -1,22 +1,5 @@
-/**
- * Commands: the API an application uses to make the device sign things.
- *
- * Contracts under test, from the JSDoc, the README and the Shell APDU protocol:
- *  - getPublicKey(path, chaincode?)     -> CLA 0xE0 INS 0x02, P2 = chaincode flag,
- *                                          data = [pathCount][4-byte BE path elements],
- *                                          reply [fpLen][fp][pkLen][pubkey][ccLen][cc].
- *  - signEthTransaction(path, rawTxHex) -> INS 0x04, P1 0x00 then 0x80, whole tx
- *                                          transferred in order, reply [v][r(32)][s(32)].
- *  - signEthPersonalMessage(path, msg)  -> INS 0x08, data = [path][msgLen(4 BE)][msg].
- *  - signEIP712Message(path, json)      -> INS 0x0C, P2 0x01, JSON document.
- *  - signPSBT(psbt)                     -> INS 0x0E, data = [totalLen(4 BE)][bytes],
- *                                          returns the reply without its status word.
- *  - loadFirmware / loadDatabase        -> INS 0xF2 / 0xF4, data = [totalLen(4 BE)][bytes],
- *                                          "chunk-loaded" per acknowledged chunk.
- *  - getAppConfiguration()              -> INS 0x06, [fw(3)][db(4)][serial(16)][pubkey(33)]
- *                                          (+ [fwVariant][fwBeta] on newer firmware).
- *  - Device output is untrusted: a malformed reply must raise, not yield garbage.
- */
+// Commands: APDU wire format and reply parsing for every Shell command.
+
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -108,7 +91,6 @@ describe("getPublicKey", () => {
   test("rejects a path with no components", async () => {
     const t = new MockTransport(() => reply(publicKeyPayload()));
     await assert.rejects(() => new Commands(t).getPublicKey(""), e => e instanceof Error && !(e instanceof TransportError) === false);
-    // whatever the error type, nothing must have been sent to the device
     assert.equal(t.exchangeCount, 0, "an empty path must not be sent");
   });
 
@@ -143,8 +125,7 @@ describe("getPublicKey", () => {
 });
 
 describe("signEthTransaction", () => {
-  // Legacy transaction in the "ready to sign" shape used by hardware wallets:
-  // v carries the chain id, r and s are empty.
+  // Legacy tx in the hardware-wallet "ready to sign" shape: v carries the chain id, r and s are empty.
   const unsignedChainId1 = (() => {
     const { encode } = require("@ethersproject/rlp");
     return encode(["0x00", "0x04e3b29200", "0x5208", txs.TO, "0x01", "0xdeadbeef", "0x01", "0x", "0x"]).replace(/^0x/, "");
@@ -201,8 +182,7 @@ describe("signEthTransaction", () => {
   });
 
   test("rebuilds v for a chain id too large for one byte (legacy tx, chain id 0x165c)", async () => {
-    // v = 2 * chainId + 35 + parity; the device only reports the parity when v
-    // would not fit in a byte, relative to (chainId * 2 + 35) % 256 = 219.
+    // v = 2*chainId + 35 + parity; the device reports only the parity when v would not fit in one byte.
     const parity0 = new MockTransport(() => reply(signaturePayload({ v: 219 })));
     assert.equal((await new Commands(parity0).signEthTransaction(PATH, txs.legacyBigChainId)).v, (2 * 5724 + 35).toString(16));
 
@@ -326,7 +306,7 @@ describe("signEthPersonalMessage", () => {
   });
 
   test("a multibyte message is measured in bytes, not characters", async () => {
-    const message = "héllo"; // 'é' is 2 bytes in UTF-8
+    const message = "héllo";
     const t = new MockTransport(() => reply(signaturePayload()));
     await new Commands(t).signEthPersonalMessage(PATH, message);
 
@@ -353,7 +333,7 @@ describe("signEIP712Message", () => {
   });
 
   test("transfers a large document completely and declares its byte length", async () => {
-    const big = { contents: "ü".repeat(500) }; // multibyte: byte length != char count
+    const big = { contents: "ü".repeat(500) };
     const t = new MockTransport(() => reply(signaturePayload()));
     await new Commands(t).signEIP712Message(PATH, big);
 

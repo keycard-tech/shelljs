@@ -1,6 +1,5 @@
-/**
- * promise helpers used around flaky device operations.
- */
+// Promise helpers used around flaky device operations.
+
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 

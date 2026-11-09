@@ -1,16 +1,5 @@
-/**
- * Raw transaction fixtures, RLP-encoded with the same library the transport uses
- * (@ethersproject/rlp) so they are valid by construction.
- *
- * Field layouts (yellowpaper / EIP-2718):
- *   legacy   : [nonce, gasPrice, gasLimit, to, value, data, v, r, s]
- *   EIP-2930 : 0x01 || [chainId, nonce, gasPrice, gasLimit, to, value, data, accessList, yParity, r, s]
- *   EIP-1559 : 0x02 || [chainId, nonce, maxPrioFee, maxFee, gasLimit, to, value, data, accessList, yParity, r, s]
- *
- * NOTE: every string here is bare hex, *without* the "0x" prefix, because
- * Buffer.from("0x...", "hex") silently decodes to an empty buffer.
- * See bugs.test.js -> "0x-prefixed raw tx is rejected with an opaque rlp error".
- */
+// Raw tx fixtures RLP-encoded with the library's own encoder; bare hex, since Buffer.from("0x...", "hex") yields an empty buffer.
+
 const { encode } = require("@ethersproject/rlp");
 
 const R = "0x" + "11".repeat(32);
@@ -29,7 +18,7 @@ const legacyPre155 = strip(
   encode(["0x00", "0x04e3b29200", "0x5208", TO, "0x01", "0xdeadbeef", "0x1b", R, S]),
 );
 
-/** Legacy tx with a chain id that does not fit in one byte (0x0aee = 2798) */
+/** Legacy tx whose chain id does not fit in one byte (v = 0x165c = 5724) */
 const legacyBigChainId = strip(
   encode(["0x00", "0x3b9aca00", "0x5208", TO, "0x00", "0x", "0x165c", R, S]),
 );
@@ -73,7 +62,7 @@ const eip2930AccessList =
     ]),
   );
 
-/** Long legacy tx (> 150 bytes, forces signEthTransaction to chunk) */
+/** Long legacy tx (306 bytes), forces signEthTransaction to chunk. */
 const longLegacy = strip(
   encode([
     "0x00",

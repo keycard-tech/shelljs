@@ -1,10 +1,5 @@
-/**
- * utils: BIP-32 path parsing, hex helpers and raw-transaction decoding.
- *
- * A derivation path is the one input that decides *which key* signs, so the
- * contract here is "what you parse is what gets sent": a component that cannot
- * be represented must be rejected rather than dropped or substituted.
- */
+// utils: BIP-32 path parsing, hex helpers and raw-transaction decoding - what you parse is what gets sent.
+
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const { encode } = require("@ethersproject/rlp");
@@ -152,7 +147,7 @@ describe("decodeTxInfo", () => {
   });
 
   test("reads a chain id wider than 4 bytes without losing precision", () => {
-    const wideV = "0x" + "ffffffffffffffff".slice(0, 16); // 8 bytes, 0xffffffffffffffff
+    const wideV = "0xffffffffffffffff";
     const raw = encode(["0x00", "0x3b9aca00", "0x5208", txs.TO, "0x00", "0x", wideV, "0x", "0x"]).replace(/^0x/, "");
     const { chainId } = info(raw);
 

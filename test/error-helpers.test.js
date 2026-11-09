@@ -1,7 +1,5 @@
-/**
- * error-helpers: turning errors into plain data and back, e.g. to cross a
- * worker/iframe boundary. Input on the deserialize side is untrusted.
- */
+// error-helpers: errors to plain data and back; the deserialize side receives untrusted input.
+
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 

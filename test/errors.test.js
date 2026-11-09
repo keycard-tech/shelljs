@@ -1,6 +1,5 @@
-/**
- * Status codes and error types shared by transports and commands.
- */
+// Status codes and error types shared by transports and commands.
+
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 

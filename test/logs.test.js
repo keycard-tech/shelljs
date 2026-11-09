@@ -1,8 +1,5 @@
-/**
- * Log bus: a single fan-out point used by transports to report APDU traffic.
- * Because the traffic can contain documents and signatures being produced, the
- * way listeners attach matters.
- */
+// Log bus: fan-out of device traffic, which can contain documents and signatures being produced.
+
 const { test, describe, afterEach } = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -172,9 +169,7 @@ describe("environment hygiene", () => {
   });
 
   test("the browser log hook is not installed implicitly", () => {
-    // Simulate a page: a fresh copy of the module is loaded with window defined.
-    // Anything reachable from window is reachable from every other script on the
-    // page, so subscribing to device traffic has to stay an explicit opt-in.
+    // A fresh module copy loaded with window defined simulates a page, where every other script can reach this hook.
     const logsPath = require.resolve("../lib/logs.js");
     delete require.cache[logsPath];
     globalThis.window = {};
