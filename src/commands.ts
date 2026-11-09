@@ -177,7 +177,7 @@ export default class Commands {
   console.log(publicKey);
   *
   */
-  async getAppConfiguration() : Promise<{ fwVersion: string; dbVersion: number; serialNumber: string; publicKey: string }> {
+  async getAppConfiguration() : Promise<{ fwVersion: string; dbVersion: number; serialNumber: string; publicKey: string; fwVariant?: number; fwBeta?: number }> {
     try {
       const response = await this.transport.send(0xe0, 0x06, 0x00, 0x00);
       const fwVersion = String(response[0]) + "." + String(response[1]) + "." + String(response[2]);
@@ -185,7 +185,11 @@ export default class Commands {
       const serialNumber = response.subarray(7, 23).toString("hex");
       const publicKey = response.subarray(23, 56).toString("hex");
 
-      return { fwVersion, dbVersion, serialNumber, publicKey }
+      const fwVariant = (response.byteLength == 60) ? response[56] : undefined;
+      const fwBeta = (response.byteLength == 60) ? response[57] : undefined;
+      const r = (fwVariant != undefined && fwBeta != undefined) ? { fwVersion, dbVersion, serialNumber, publicKey, fwVariant, fwBeta } : { fwVersion, dbVersion, serialNumber, publicKey };
+
+      return r
     } catch (error) {
       log("error", "Couldn't get app configuration", error);
       throw error;
