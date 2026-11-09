@@ -73,7 +73,7 @@ export class TransportError extends Error {
     super(message || name);
     this.name = name;
     this.message = message;
-    this.stack = new Error(message).stack;
+    this.stack = new Error(message).stack!;
     this.id = id;
   }
 }
@@ -167,7 +167,7 @@ export class TransportStatusError extends Error {
     super(message);
     this.name = "TransportStatusError";
     this.message = message;
-    this.stack = new Error(message).stack;
+    this.stack = new Error(message).stack!;
     this.statusCode = statusCode;
     this.statusText = statusText;
   }

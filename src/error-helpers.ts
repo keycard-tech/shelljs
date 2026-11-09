@@ -29,7 +29,7 @@ export const addCustomErrorDeserializer = (name: string, deserializer: (obj: any
 
 export const createCustomErrorClass = <F extends { [key: string]: unknown },  T extends ShellErrorConstructor<F>> ( name: string): T => {
   class CustomErrorClass extends Error {
-    cause?: Error;
+    override cause?: Error;
     constructor(message?: string, fields?: F, options?: any) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore

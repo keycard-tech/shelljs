@@ -51,7 +51,7 @@ export const listen = (cb: Subscriber): Unsubscribe => {
 
     if (i !== -1) {
       // equivalent of subscribers.splice(i, 1) // https://twitter.com/Rich_Harris/status/1125850391155965952
-      subscribers[i] = subscribers[subscribers.length - 1];
+      subscribers[i] = subscribers[subscribers.length - 1]!;
       subscribers.pop();
     }
   };
@@ -60,7 +60,7 @@ export const listen = (cb: Subscriber): Unsubscribe => {
 const dispatch = (log: Log): void => {
   for (let i = 0; i < subscribers.length; i++) {
     try {
-      subscribers[i](log);
+      subscribers[i]!(log);
     } catch (e) {
       console.error(e);
     }
@@ -76,7 +76,7 @@ export const trace = ({
   type: LogsTypes.LogType;
   message?: string;
   data?: LogsTypes.LogData;
-  context?: LogsTypes.TraceContext;
+  context?: LogsTypes.TraceContext | undefined;
 }) => {
   const obj: Log = {
     type,

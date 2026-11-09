@@ -213,7 +213,7 @@ export default class Commands {
       const publicKey = response.subarray(23, 56).toString("hex");
 
       return extended
-        ? { fwVersion, dbVersion, serialNumber, publicKey, fwVariant: response[56], fwBeta: response[57] }
+        ? { fwVersion, dbVersion, serialNumber, publicKey, fwVariant: response.readUInt8(56), fwBeta: response.readUInt8(57) }
         : { fwVersion, dbVersion, serialNumber, publicKey };
     } catch (error) {
       log("error", "Couldn't get app configuration", error);

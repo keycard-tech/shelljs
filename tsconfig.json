@@ -16,7 +16,10 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "types": ["node"],
-    "strict": true
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true
   },
   "include": [
     "src/**/*.ts"

@@ -54,7 +54,8 @@ export const hexBuffer = (str: string): Buffer => {
 
 export const decodeTxInfo = (rawTx: Buffer) : any => {
   const VALID_TYPES = [1, 2];
-  const txType = VALID_TYPES.includes(rawTx[0]) ? rawTx[0] : null;
+  const firstByte = rawTx[0] ?? 0;
+  const txType = VALID_TYPES.includes(firstByte) ? firstByte : null;
   const rlpData = txType === null ? rawTx : rawTx.subarray(1);
   const rlpTx = decode(rlpData).map((hex: any) => Buffer.from(hex.slice(2), "hex"));
   let chainIdTruncated = 0;
@@ -106,12 +107,14 @@ export const decodeTxInfo = (rawTx: Buffer) : any => {
     vrsOffset = rawTx.length - (rlpVrs.length - 1);
 
     // First byte > 0xf7 means the length of the list length doesn't fit in a single byte.
-    if (rlpVrs[0] > 0xf7) {
+    const rlpVrsFirst = rlpVrs[0] ?? 0;
+
+    if (rlpVrsFirst > 0xf7) {
       // Increment vrsOffset to account for that extra byte.
       vrsOffset++;
 
       // Compute size of the list length.
-      const sizeOfListLen = rlpVrs[0] - 0xf7;
+      const sizeOfListLen = rlpVrsFirst - 0xf7;
 
       // Increase rlpOffset by the size of the list length.
       vrsOffset += sizeOfListLen - 1;
