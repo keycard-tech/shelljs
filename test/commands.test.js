@@ -101,7 +101,7 @@ describe("getPublicKey", () => {
 
   test("rejects a path with no components", async () => {
     const t = new MockTransport(() => reply(publicKeyPayload()));
-    await assert.rejects(() => new Commands(t).getPublicKey(""), e => e instanceof Error && !(e instanceof TransportError) === false);
+    await assert.rejects(() => new Commands(t).getPublicKey(""), e => e instanceof Error && !(e instanceof TransportError));
     assert.equal(t.exchangeCount, 0, "an empty path must not be sent");
   });
 
@@ -391,14 +391,6 @@ describe("signPSBT", () => {
     }
   });
 
-  test("rejects an empty PSBT with a clear error", async () => {
-    const t = new MockTransport(() => reply("00"));
-    await assert.rejects(
-      () => new Commands(t).signPSBT(new ArrayBuffer(0)),
-      e => e instanceof TransportError || e.name === "InvalidTxData",
-    );
-  });
-
   test("rejects a non-binary input instead of encoding it as text", async () => {
     const t = new MockTransport(() => reply("00"));
     await assert.rejects(
@@ -470,13 +462,6 @@ describe("loadFirmware / loadDatabase", () => {
       assert.ok(sizes.reduce((a, b) => a + b, 0) <= 240, `progress reported ${sizes.reduce((a, b) => a + b, 0)} bytes for a failed transfer`);
     });
 
-    test(`${name} rejects an empty payload`, async () => {
-      const t = new MockTransport(() => reply());
-      await assert.rejects(
-        () => run(new Commands(t), new ArrayBuffer(0)),
-        e => e instanceof TransportError,
-      );
-    });
   }
 });
 

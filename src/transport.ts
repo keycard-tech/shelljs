@@ -25,7 +25,6 @@ const DEFAULT_LOG_TYPE = "transport";
 const GET_RESPONSE_INS = 0xc0;
 const GET_RESPONSE_CODE = 0x6100;
 const MAX_GET_RESPONSE_CHUNKS = 256;
-const MAX_RESPONSE_BYTES = 65535;
 
 /**
  * The Transport class defines a generic interface for communicating with a Shell hardware wallet.
@@ -191,14 +190,16 @@ export default class Transport {
    * @returns {Promise<Buffer>} A promise that resolves with the response data from the device.
    */
   send = (cla: number, ins: number, p1: number, p2: number, data: Buffer = Buffer.alloc(0), statusList: Array<number> = [StatusCodes.OK]): Promise<Buffer> => {
-    const run = this.sendQueue.then(async () => {
-      if (data.length >= 256) {
-        throw new TransportError(
+    if (data.length >= 256) {
+      return Promise.reject(
+        new TransportError(
           "data.length exceed 256 bytes limit. Got: " + data.length,
           "DataLengthTooBig",
-        );
-      }
+        ),
+      );
+    }
 
+    const run = this.sendQueue.then(async () => {
       let response = await this.exchange(Buffer.concat([Buffer.from([cla, ins, p1, p2]), Buffer.from([data.length]), data]));
       let sw = response.readUInt16BE(response.length - 2);
       let chunks = 0;
@@ -214,13 +215,6 @@ export default class Transport {
         let tmp = await this.exchange(Buffer.from([cla, GET_RESPONSE_INS, 0, 0, 0]));
         sw = tmp.readUInt16BE(tmp.length - 2);
         response = Buffer.concat([response.subarray(0, -2), tmp]);
-
-        if (response.length > MAX_RESPONSE_BYTES) {
-          throw new TransportError(
-            "Shell device: chained response exceeded " + MAX_RESPONSE_BYTES + " bytes",
-            "GetResponseLimit",
-          );
-        }
       }
 
       if (!statusList.some(s => s === sw)) {

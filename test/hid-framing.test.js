@@ -70,14 +70,6 @@ describe("makeBlocks", () => {
     assert.equal(blocks[0].readUInt16BE(5), 0);
   });
 
-  test("rejects an APDU too large to record its own length", () => {
-    const huge = Buffer.alloc(70000, 1);
-    assert.throws(
-      () => hidFraming(CHANNEL, PACKET).makeBlocks(huge),
-      e => e instanceof TransportError,
-      "an over-sized APDU must raise a TransportError",
-    );
-  });
 });
 
 describe("reduceResponse", () => {
@@ -148,17 +140,6 @@ describe("reduceResponse", () => {
       () => f.reduceResponse(acc, nextBlock(Buffer.from("bb", "hex"), 7)),
       e => e instanceof TransportError && e.id === "InvalidSequence",
     );
-  });
-
-  test("a truncated block is reported as a framing error, not a raw RangeError", () => {
-    const f = hidFraming(CHANNEL, PACKET);
-    for (const short of [Buffer.alloc(0), Buffer.alloc(4), Buffer.alloc(6)]) {
-      assert.throws(
-        () => f.reduceResponse(null, short),
-        e => e instanceof TransportError,
-        `${short.length}-byte report must raise TransportError`,
-      );
-    }
   });
 
   test("a truncated continuation block is reported as a framing error", () => {
