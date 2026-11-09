@@ -92,7 +92,12 @@ export const deserializeError = (object: any): Error | undefined => {
         error = Object.create(constructor.prototype);
         try {
           for (const prop in object) {
-            if (object.hasOwnProperty(prop)) {
+            if (
+              object.hasOwnProperty(prop) &&
+              prop !== "__proto__" &&
+              prop !== "constructor" &&
+              prop !== "prototype"
+            ) {
               error[prop] = object[prop];
             }
           }
