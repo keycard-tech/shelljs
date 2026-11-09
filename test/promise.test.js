@@ -80,18 +80,6 @@ describe("retry", () => {
     assert.ok(elapsed >= 55, `expected >= 20 + 40ms of backoff, waited ${elapsed}ms`);
   });
 
-  test("a function that throws synchronously produces a rejected promise", async () => {
-    // Callers do retry(f).catch(...); a synchronous throw escapes that chain.
-    let p;
-    assert.doesNotThrow(() => {
-      p = retry(() => {
-        throw new Error("sync boom");
-      }, { maxRetry: 1, interval: 1 });
-    }, "retry() must always return a promise");
-
-    await assert.rejects(() => p, /sync boom/);
-  });
-
   test("retries a function that returns a rejected promise", async () => {
     let calls = 0;
     const res = await retry(

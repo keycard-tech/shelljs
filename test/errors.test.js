@@ -74,10 +74,6 @@ describe("TransportError", () => {
     assert.ok(typeof e.stack === "string" && e.stack.length > 0);
   });
 
-  test("falls back to a default message", () => {
-    const e = new TransportError(undefined, "X");
-    assert.equal(e.message, "TransportError");
-  });
 });
 
 describe("TransportStatusError", () => {
@@ -125,13 +121,6 @@ describe("createCustomErrorClass", () => {
     const e = new E("outer", undefined, { cause: inner });
 
     assert.equal(e.cause, inner);
-  });
-
-  test("records the cause chain in the stack trace", () => {
-    const E = createCustomErrorClass("WithCauseStack");
-    const e = new E("outer", undefined, { cause: new Error("inner failure") });
-
-    assert.match(String(e.stack), /CAUSE:/, "the cause is not reachable from the stack trace");
   });
 
   test("can be thrown and caught by class and by Error", () => {

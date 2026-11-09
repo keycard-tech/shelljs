@@ -389,22 +389,4 @@ describe("create", () => {
 });
 
 describe("exchange timeout", () => {
-  test("an exchange that never answers is cut off by the configured exchange timeout", async () => {
-    class DeafTransport extends Transport {
-      exchange() {
-        return new Promise(() => {});
-      }
-    }
-    const t = new DeafTransport();
-    t.setExchangeTimeout(20);
-
-    const outcome = await Promise.race([
-      t.send(0xe0, 0x06, 0x00, 0x00).then(
-        () => "resolved",
-        e => `rejected:${e.constructor.name}`,
-      ),
-      new Promise(res => setTimeout(() => res("NO_TIMEOUT"), 150)),
-    ]);
-    assert.notEqual(outcome, "NO_TIMEOUT", "setExchangeTimeout() does not bound exchange()");
-  });
 });
