@@ -155,13 +155,9 @@ export class TransportStatusError extends Error {
 
   constructor(statusCode: number) {
     const known = typeof statusCode === "number" && Number.isInteger(statusCode);
-    const statusText = known
-      ? Object.keys(StatusCodes).find(k => StatusCodes[k as keyof typeof StatusCodes] === statusCode) || "UNKNOWN_ERROR"
-      : "INVALID_STATUS";
+    const statusText = known ? Object.keys(StatusCodes).find(k => StatusCodes[k as keyof typeof StatusCodes] === statusCode) || "UNKNOWN_ERROR" : "INVALID_STATUS";
     const smsg = known ? getAltStatusMessage(statusCode) || statusText : "invalid status code";
-    const message = known
-      ? `Shell device: ${smsg} (0x${statusCode.toString(16)})`
-      : `Shell device: ${smsg} (got ${String(statusCode)})`;
+    const message = known ? `Shell device: ${smsg} (0x${statusCode.toString(16)})` : `Shell device: ${smsg} (got ${String(statusCode)})`;
 
     // Maps to a LockedDeviceError
     if (statusCode === StatusCodes.LOCKED_DEVICE) {

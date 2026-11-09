@@ -24,6 +24,8 @@ import { LocalTracer } from "./logs";
 const DEFAULT_LOG_TYPE = "transport";
 const GET_RESPONSE_INS = 0xc0;
 const GET_RESPONSE_CODE = 0x6100;
+const MAX_GET_RESPONSE_CHUNKS = 256;
+const MAX_RESPONSE_BYTES = 65535;
 
 /**
  * The Transport class defines a generic interface for communicating with a Shell hardware wallet.
@@ -34,6 +36,7 @@ export default class Transport {
   exchangeTimeout = 30000;
   unresponsiveTimeout = 15000;
   exchangeBusyPromise: Promise<void> | null | undefined;
+  sendQueue: Promise<unknown> = Promise.resolve();
   tracer: LocalTracer;
 
   constructor({ context, logType }: { context?: TraceContext; logType?: LogType } = {}) {
@@ -187,28 +190,49 @@ export default class Transport {
    * @param {Array<number>} statusList - A list of acceptable status codes for the response. Defaults to [StatusCodes.OK].
    * @returns {Promise<Buffer>} A promise that resolves with the response data from the device.
    */
-  send = async ( cla: number, ins: number, p1: number, p2: number, data: Buffer = Buffer.alloc(0), statusList: Array<number> = [StatusCodes.OK]): Promise<Buffer> => {
-    if (data.length >= 256) {
-      throw new TransportError(
-        "data.length exceed 256 bytes limit. Got: " + data.length,
-        "DataLengthTooBig",
-      );
-    }
+  send = (cla: number, ins: number, p1: number, p2: number, data: Buffer = Buffer.alloc(0), statusList: Array<number> = [StatusCodes.OK]): Promise<Buffer> => {
+    const run = this.sendQueue.then(async () => {
+      if (data.length >= 256) {
+        throw new TransportError(
+          "data.length exceed 256 bytes limit. Got: " + data.length,
+          "DataLengthTooBig",
+        );
+      }
 
-    let response = await this.exchange(Buffer.concat([Buffer.from([cla, ins, p1, p2]), Buffer.from([data.length]), data]));
-    let sw = response.readUInt16BE(response.length - 2);
-    
-    while((sw & 0xFF00) == GET_RESPONSE_CODE)  {
+      let response = await this.exchange(Buffer.concat([Buffer.from([cla, ins, p1, p2]), Buffer.from([data.length]), data]));
+      let sw = response.readUInt16BE(response.length - 2);
+      let chunks = 0;
+
+      while((sw & 0xFF00) == GET_RESPONSE_CODE)  {
+        if (++chunks > MAX_GET_RESPONSE_CHUNKS) {
+          throw new TransportError(
+            "Shell device: GET RESPONSE limit exceeded (" + chunks + " chunks)",
+            "GetResponseLimit",
+          );
+        }
+
         let tmp = await this.exchange(Buffer.from([cla, GET_RESPONSE_INS, 0, 0, 0]));
         sw = tmp.readUInt16BE(tmp.length - 2);
         response = Buffer.concat([response.subarray(0, -2), tmp]);
-    }
 
-    if (!statusList.some(s => s === sw)) {
-      throw new TransportStatusError(sw);
-    }
+        if (response.length > MAX_RESPONSE_BYTES) {
+          throw new TransportError(
+            "Shell device: chained response exceeded " + MAX_RESPONSE_BYTES + " bytes",
+            "GetResponseLimit",
+          );
+        }
+      }
 
-    return response;
+      if (!statusList.some(s => s === sw)) {
+        throw new TransportStatusError(sw);
+      }
+
+      return response;
+    });
+
+    this.sendQueue = run.catch(() => {});
+
+    return run;
   }
 
   /**
