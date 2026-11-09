@@ -86,7 +86,7 @@ export const decodeTxInfo = (rawTx: Buffer) : any => {
       data: rlpDecoded[5],
       to: rlpDecoded[3],
       // Default to 1 for non EIP 155 txs
-      chainId: rlpTx.length > 6 ? rlpTx[6] : Buffer.from("0x01", "hex"),
+      chainId: rlpTx.length > 6 ? rlpTx[6] : Buffer.from("01", "hex"),
     };
   }
 
@@ -178,7 +178,9 @@ export enum ERC1155_CLEAR_SIGNED_SELECTORS {
 }
 
 export const tokenSelectors = Object.values(ERC20_CLEAR_SIGNED_SELECTORS);
-export const nftSelectors = [
-  ...Object.values(ERC721_CLEAR_SIGNED_SELECTORS),
-  ...Object.values(ERC1155_CLEAR_SIGNED_SELECTORS),
-];
+export const nftSelectors = Array.from(
+  new Set([
+    ...Object.values(ERC721_CLEAR_SIGNED_SELECTORS),
+    ...Object.values(ERC1155_CLEAR_SIGNED_SELECTORS),
+  ]),
+);
