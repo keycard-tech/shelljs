@@ -16,7 +16,7 @@
  ********************************************************************************/
 import type Transport from "./transport";
 import { log } from "./logs";
-import { decodeTxInfo, splitPath } from "./utils";
+import { decodeTxInfo, hexBuffer, splitPath } from "./utils";
 import { InvalidTxData, TransportError } from "./errors";
 
 export * from "./utils";
@@ -119,7 +119,7 @@ export default class Commands {
    console.log(resp);
    */
   async signEthTransaction(path: string, rawTxHex: string): Promise<{s: string; v: string;  r: string;}> {
-    const rawTx = Buffer.from(rawTxHex, "hex");
+    const rawTx = hexBuffer(rawTxHex);
     const { vrsOffset, txType, chainId, chainIdTruncated } = decodeTxInfo(rawTx);
     const paths = splitPath(path);
 
@@ -228,7 +228,7 @@ export default class Commands {
     let offset = 0;
     let response: any;
 
-    while (offset !== message.length) {
+    do {
       const maxChunkSize = offset === 0 ? 255 - 1 - paths.length * 4 - 4 : 255;
       const chunkSize = offset + maxChunkSize > message.length ? message.length - offset : maxChunkSize;
       const buffer = Buffer.alloc(offset === 0 ? 1 + paths.length * 4 + 4 + chunkSize : chunkSize);
@@ -247,7 +247,7 @@ export default class Commands {
       response = await this.transport.send(cla, ins, offset === 0 ? 0x00 : 0x80, p2, buffer);
 
       offset += chunkSize;
-    }
+    } while (offset !== message.length);
 
     const v = response[0];
     const r = response.subarray(1, 33).toString("hex");
@@ -328,6 +328,10 @@ export default class Commands {
    *
    */
   async signPSBT(psbt: ArrayBuffer): Promise<ArrayBuffer> {
+    if (typeof psbt === "string") {
+      throw new TransportError("signPSBT expects the PSBT bytes, not a hex string", "InvalidPsbt");
+    }
+
     const message = Buffer.from(psbt);
 
     enum APDU_FIELDS {

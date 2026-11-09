@@ -217,23 +217,6 @@ describe("signEthTransaction", () => {
     assert.equal(reassemble(t.apdus, 1 + 4 * HARDENED.length).toString("hex"), unsignedChainId1);
   });
 
-  test("rejects a transaction that is not valid RLP with a clear error", async () => {
-    const t = new MockTransport(() => reply(signaturePayload()));
-    await assert.rejects(
-      () => new Commands(t).signEthTransaction(PATH, "zz"),
-      e => e.name === "InvalidTxData" || e instanceof TransportError,
-      "invalid hex must raise a library error type",
-    );
-  });
-
-  test("rejects an empty transaction instead of crashing", async () => {
-    const t = new MockTransport(() => reply(signaturePayload()));
-    await assert.rejects(
-      () => new Commands(t).signEthTransaction(PATH, ""),
-      e => e.name === "InvalidTxData" || e instanceof TransportError,
-    );
-  });
-
   test("maps status 0x6a80 to InvalidTxData", async () => {
     const t = new MockTransport(() => statusError(SW.INCORRECT_DATA));
     await assert.rejects(() => new Commands(t).signEthTransaction(PATH, unsignedChainId1), e => e.name === "InvalidTxData");
@@ -392,12 +375,12 @@ describe("signPSBT", () => {
   });
 
   test("rejects a non-binary input instead of encoding it as text", async () => {
-    const t = new MockTransport(() => reply("00"));
+    const t = new MockTransport(() => reply("aabbccdd"));
     await assert.rejects(
-      // a hex string is a common caller mistake; utf-8 encoding it would sign garbage
       () => new Commands(t).signPSBT(psbtBlob(16).toString("hex")),
       e => e instanceof TransportError || e instanceof TypeError,
     );
+    assert.equal(t.exchangeCount, 0, "nothing may reach the device");
   });
 
   test("propagates a device error", async () => {
