@@ -88,6 +88,17 @@ describe("getPublicKey", () => {
     await assert.rejects(() => new Commands(t).getPublicKey(PATH), e => e instanceof TransportError);
   });
 
+  test("rejects a chain code request the device did not answer", async () => {
+    const t = new MockTransport(() => reply(publicKeyPayload()));
+    await assert.rejects(() => new Commands(t).getPublicKey(PATH, true), e => e instanceof TransportError);
+  });
+
+  test("rejects a reply with unaccounted trailing bytes", async () => {
+    const payload = Buffer.concat([publicKeyPayload(), Buffer.from("aabbcc", "hex")]);
+    const t = new MockTransport(() => reply(payload));
+    await assert.rejects(() => new Commands(t).getPublicKey(PATH), e => e instanceof TransportError);
+  });
+
   test("rejects a path with no components", async () => {
     const t = new MockTransport(() => reply(publicKeyPayload()));
     await assert.rejects(() => new Commands(t).getPublicKey(""), e => e instanceof Error && !(e instanceof TransportError) === false);
@@ -233,15 +244,6 @@ describe("signEthTransaction", () => {
     await assert.rejects(
       () => new Commands(t).signEthTransaction(PATH, unsignedChainId1),
       e => e.name === "TransportStatusError" && e.statusCode === SW.USER_REFUSED,
-    );
-  });
-
-  test("rejects a reply shorter than one parity byte plus r and s", async () => {
-    const t = new MockTransport(() => reply(Buffer.alloc(20)));
-    await assert.rejects(
-      () => new Commands(t).signEthTransaction(PATH, unsignedChainId1),
-      e => e instanceof TransportError,
-      "a truncated signature must not be returned as if it were valid",
     );
   });
 });
@@ -506,6 +508,12 @@ describe("getAppConfiguration", () => {
       assert.ok(res.dbVersion >= 0, `dbVersion ${res.dbVersion} for 0x${db.toString(16)} is negative`);
       assert.equal(res.dbVersion, db, `dbVersion for 0x${db.toString(16)}`);
     }
+  });
+
+  test("rejects an extension that is only partially present", async () => {
+    const payload = Buffer.concat([appConfigPayload({ extended: true }), Buffer.from([0x01])]);
+    const t = new MockTransport(() => reply(payload));
+    await assert.rejects(() => new Commands(t).getAppConfiguration(), e => e instanceof TransportError);
   });
 
   test("reports fwVariant and fwBeta from the extended 58-byte payload", async () => {

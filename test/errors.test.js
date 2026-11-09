@@ -96,6 +96,17 @@ describe("TransportStatusError", () => {
     assert.match(e.message, /0x1234/);
   });
 
+  test("a missing or non-numeric status code still produces an error", () => {
+    for (const value of [undefined, null, "0x6a80", {}, NaN]) {
+      const e = new TransportStatusError(value);
+      assert.ok(e instanceof TransportStatusError, `${String(value)} must not throw inside the constructor`);
+      assert.match(e.message, /invalid status code/i);
+      assert.ok(!/0x0x/.test(e.message), `status must not be double prefixed: ${e.message}`);
+      assert.ok(Number.isNaN(e.statusCode));
+      assert.equal(e.statusText, "INVALID_STATUS");
+    }
+  });
+
   test("a locked device surfaces as LockedDeviceError", () => {
     assert.throws(() => new TransportStatusError(StatusCodes.LOCKED_DEVICE), e => e instanceof LockedDeviceError);
   });
