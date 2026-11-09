@@ -221,31 +221,61 @@ export default class Transport {
   static create(openTimeout = 3000, listenTimeout?: number): Promise<Transport> {
     return new Promise((resolve, reject) => {
       let found = false;
-      const sub = this.listen({
+      let settled = false;
+      let released = false;
+      let listenTimeoutId: ReturnType<typeof setTimeout> | undefined;
+      let sub: TransportTypes.Subscription | undefined;
+
+      const releaseSubscription = () => {
+        if (released || !sub) return;
+        released = true;
+        sub.unsubscribe();
+      };
+
+      const clearListenTimeout = () => {
+        if (listenTimeoutId !== undefined) {
+          clearTimeout(listenTimeoutId);
+          listenTimeoutId = undefined;
+        }
+      };
+
+      const stopListening = () => {
+        settled = true;
+        clearListenTimeout();
+        releaseSubscription();
+      };
+
+     if (listenTimeout) {
+        listenTimeoutId = setTimeout(() => {
+          if (settled) return;
+          stopListening();
+          reject(new TransportError(this.ErrorMessage_ListenTimeout, "ListenTimeout"));
+        }, listenTimeout);
+      }
+
+      sub = this.listen({
         next: e => {
+          if (settled) return;
           found = true;
-          if (sub) sub.unsubscribe();
-          if (listenTimeoutId) clearTimeout(listenTimeoutId);
+          stopListening();
           this.open(e.descriptor, openTimeout).then(resolve, reject);
         },
         error: e => {
-          if (listenTimeoutId) clearTimeout(listenTimeoutId);
+          if (settled) return;
+          settled = true;
+          clearListenTimeout();
           reject(e);
         },
         complete: () => {
-          if (listenTimeoutId) clearTimeout(listenTimeoutId);
+          clearListenTimeout();
 
-          if (!found) {
+          if (!settled && !found) {
             reject(new TransportError(this.ErrorMessage_NoDeviceFound, "NoDeviceFound"));
           }
         },
       });
-      const listenTimeoutId = listenTimeout
-        ? setTimeout(() => {
-            sub.unsubscribe();
-            reject(new TransportError(this.ErrorMessage_ListenTimeout, "ListenTimeout"));
-          }, listenTimeout)
-        : null;
+
+      if (found || settled) releaseSubscription();
     });
   }
 

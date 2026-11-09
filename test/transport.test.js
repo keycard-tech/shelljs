@@ -391,6 +391,27 @@ describe("create", () => {
     const transport = await SyncListenTransport.create();
     assert.ok(transport instanceof SyncListenTransport);
   });
+
+  test("releases the subscription exactly once when devices are reported synchronously", async () => {
+    let unsubscribeCalls = 0;
+    class SyncTransport extends Transport {
+      static listen(observer) {
+        observer.next({ type: "add", descriptor: "sync-2" });
+        observer.complete();
+        return {
+          unsubscribe: () => {
+            unsubscribeCalls++;
+          },
+        };
+      }
+      static open() {
+        return Promise.resolve(new SyncTransport());
+      }
+    }
+
+    await SyncTransport.create();
+    assert.equal(unsubscribeCalls, 1, "device enumeration was left subscribed (or released twice)");
+  });
 });
 
 describe("exchange timeout", () => {
