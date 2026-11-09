@@ -67,18 +67,6 @@ const dispatch = (log: Log): void => {
   }
 }
 
-// for debug purpose
-
-declare global {
-  interface Window {
-    __shellLogsListen: any;
-  }
-}
-
-if (typeof window !== "undefined") {
-  window.__shellLogsListen = listen;
-}
-
 export const trace = ({
   type,
   message,
