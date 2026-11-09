@@ -4,7 +4,7 @@ const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const { encode } = require("@ethersproject/rlp");
 
-const { splitPath, hexBuffer, maybeHexBuffer, decodeTxInfo, intAsHexBytes, tokenSelectors, nftSelectors } = require("../lib/utils.js");
+const { splitPath, hexBuffer, decodeTxInfo, intAsHexBytes, tokenSelectors, nftSelectors } = require("../lib/utils.js");
 const txs = require("./fixtures/transactions.js");
 
 describe("splitPath", () => {
@@ -51,7 +51,7 @@ describe("splitPath", () => {
   });
 });
 
-describe("hexBuffer / maybeHexBuffer", () => {
+describe("hexBuffer", () => {
   test("decodes hex with and without the 0x prefix", () => {
     assert.equal(hexBuffer("aabbcc").toString("hex"), "aabbcc");
     assert.equal(hexBuffer("0xaabbcc").toString("hex"), "aabbcc");
@@ -69,16 +69,6 @@ describe("hexBuffer / maybeHexBuffer", () => {
 
   test("rejects a hex string of odd length", () => {
     assert.throws(() => hexBuffer("abc"), /hex|length/i);
-  });
-
-  test("maybeHexBuffer returns null for empty input", () => {
-    assert.equal(maybeHexBuffer(null), null);
-    assert.equal(maybeHexBuffer(undefined), null);
-    assert.equal(maybeHexBuffer(""), null);
-  });
-
-  test("maybeHexBuffer decodes a real value", () => {
-    assert.equal(maybeHexBuffer("00ff").toString("hex"), "00ff");
   });
 });
 

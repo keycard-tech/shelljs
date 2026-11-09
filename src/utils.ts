@@ -52,11 +52,6 @@ export const hexBuffer = (str: string): Buffer => {
   return Buffer.from(hex, "hex");
 }
 
-export const maybeHexBuffer = (str: string | null | undefined): Buffer | null | undefined => {
-  if (!str) return null;
-  return hexBuffer(str);
-}
-
 export const decodeTxInfo = (rawTx: Buffer) : any => {
   const VALID_TYPES = [1, 2];
   const txType = VALID_TYPES.includes(rawTx[0]) ? rawTx[0] : null;

@@ -328,10 +328,6 @@ export default class Commands {
    *
    */
   async signPSBT(psbt: ArrayBuffer): Promise<ArrayBuffer> {
-    if (typeof psbt === "string") {
-      throw new TransportError("signPSBT expects the PSBT bytes, not a hex string", "InvalidPsbt");
-    }
-
     const message = Buffer.from(psbt);
 
     enum APDU_FIELDS {

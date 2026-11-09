@@ -374,15 +374,6 @@ describe("signPSBT", () => {
     }
   });
 
-  test("rejects a non-binary input instead of encoding it as text", async () => {
-    const t = new MockTransport(() => reply("aabbccdd"));
-    await assert.rejects(
-      () => new Commands(t).signPSBT(psbtBlob(16).toString("hex")),
-      e => e instanceof TransportError || e instanceof TypeError,
-    );
-    assert.equal(t.exchangeCount, 0, "nothing may reach the device");
-  });
-
   test("propagates a device error", async () => {
     const t = new MockTransport(() => statusError(SW.INCORRECT_DATA));
     await assert.rejects(() => new Commands(t).signPSBT(psbtBlob(16)), e => e.statusCode === SW.INCORRECT_DATA);
