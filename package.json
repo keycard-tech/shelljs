@@ -6,6 +6,20 @@
   "module": "lib-es/index.js",
   "browser": "lib-es/index.js",
   "types": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "lib-es"
+  ],
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "browser": "./lib-es/index.js",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "repository": {
     "url": "https://github.com/choppu/shelljs.git"
   },

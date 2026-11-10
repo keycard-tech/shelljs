@@ -29,7 +29,10 @@ export const addCustomErrorDeserializer = (name: string, deserializer: (obj: any
 
 export const createCustomErrorClass = <F extends { [key: string]: unknown },  T extends ShellErrorConstructor<F>> ( name: string): T => {
   class CustomErrorClass extends Error {
-    override cause?: Error;
+    // `declare` keeps this type-only: an emitted field would run
+    // Object.defineProperty(this, "cause", { value: undefined }) right after
+    // super(), clobbering the cause set by the native Error constructor.
+    declare cause?: Error;
     constructor(message?: string, fields?: F, options?: any) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -44,7 +47,7 @@ export const createCustomErrorClass = <F extends { [key: string]: unknown },  T 
           this[k] = fields[k];
         }
       }
-      if (options && isObject(options) && "cause" in options && !("cause" in this)) {
+      if (options && isObject(options) && "cause" in options && this.cause === undefined) {
         // .cause was specified but the superconstructor
         // did not create an instance property.
         const cause = options.cause;
