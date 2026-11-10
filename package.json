@@ -19,6 +19,19 @@
       "require": "./lib/index.js",
       "default": "./lib/index.js"
     },
+    "./lib": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*.mjs": "./lib/*.js",
+    "./lib/*": {
+      "types": "./lib/*.d.ts",
+      "default": "./lib/*.js"
+    },
+    "./lib-es/*.js": "./lib-es/*.js",
+    "./src/*.ts": "./src/*.ts",
+    "./src/*": "./src/*.ts",
     "./package.json": "./package.json"
   },
   "repository": {
