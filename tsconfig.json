@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "sourceMap": true,
+    "inlineSources": true,
     "declaration": true,
     "forceConsistentCasingInFileNames": true,
     "pretty": true,
