@@ -23,7 +23,7 @@
   "author": "Ksenia Lebedeva",
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "typescript": "5.9.2"
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "@ethersproject/rlp": "^5.8.0",

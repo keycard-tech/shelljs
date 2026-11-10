@@ -143,6 +143,8 @@ export const getAltStatusMessage = (code: number): string | undefined | null => 
   if (0x6f00 <= code && code <= 0x6fff) {
     return "Internal error, please report";
   }
+
+  return undefined;
 }
 
 /**
