@@ -27,7 +27,7 @@ const APP_CONFIG_EXTENDED_BYTES = APP_CONFIG_BYTES + 2;
 
 const malformed = (command: string, response: any, expected: number) =>
   new TransportError(
-    `Shell device: malformed ${command} response (${response ? response.length + " bytes" : "no reply"}, expected ${expected})`,
+    `Malformed ${command} response (${response ? response.length + " bytes" : "no reply"}, expected ${expected})`,
     "InvalidResponse",
   );
 
@@ -114,9 +114,11 @@ export default class Commands {
    * @return an object with s, v and r
    *
    * @example
-   const tx = "e8018504e3b292008252089428ee52a8f3d6e5d15f8b131996950d7f296c7952872bd72a2487400080"; // raw tx to sign
+   const tx = "eb008504a817c8008252089428ee52a8f3d6e5d15f8b131996950d7f296c795287038d7ea4c6800080018080"; // unsigned EIP-155 tx
    const resp = await cmd.signEthTransaction("44'/60'/0'/0/0", tx);
    console.log(resp);
+
+   const typed = "02f20100843b9aca008504a817c8008252089428ee52a8f3d6e5d15f8b131996950d7f296c795287038d7ea4c6800080c0808080"; // unsigned EIP-1559 tx
    */
   async signEthTransaction(path: string, rawTxHex: string): Promise<{s: string; v: string;  r: string;}> {
     const rawTx = hexBuffer(rawTxHex);

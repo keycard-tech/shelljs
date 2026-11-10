@@ -89,9 +89,11 @@ sign a transaction and retrieve v, r, s given the raw transaction and the BIP 32
 ##### Examples
 
 ```javascript
-const tx = "e8018504e3b292008252089428ee52a8f3d6e5d15f8b131996950d7f296c7952872bd72a2487400080"; // raw tx to sign
+const tx = "eb008504a817c8008252089428ee52a8f3d6e5d15f8b131996950d7f296c795287038d7ea4c6800080018080"; // unsigned EIP-155 tx
 const resp = cmd.signEthTransaction("44'/60'/0'/0/0", tx);
 console.log(resp);
+
+const typed = "02f20100843b9aca008504a817c8008252089428ee52a8f3d6e5d15f8b131996950d7f296c795287038d7ea4c6800080c0808080"; // unsigned EIP-1559 tx
 ```
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{s: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), v: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), r: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)}>**

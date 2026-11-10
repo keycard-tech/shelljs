@@ -207,7 +207,7 @@ export default class Transport {
       while((sw & 0xFF00) == GET_RESPONSE_CODE)  {
         if (++chunks > MAX_GET_RESPONSE_CHUNKS) {
           throw new TransportError(
-            "Shell device: GET RESPONSE limit exceeded (" + chunks + " chunks)",
+            "GET RESPONSE limit exceeded (" + chunks + " chunks)",
             "GetResponseLimit",
           );
         }
