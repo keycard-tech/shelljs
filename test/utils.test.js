@@ -183,6 +183,15 @@ describe("decodeTxInfo", () => {
       assert.throws(() => info(raw), Error, `decodeTxInfo(${JSON.stringify(raw)}) should not silently succeed`);
     }
   });
+
+  test("a transaction hash passed for the raw transaction is named in the error", () => {
+    const hash = "8b9d78ca2a022fd99ab29bbf3cf282570420c5c78ef799bdbf45e3d79842e10d";
+
+    assert.throws(
+      () => info(hash),
+      err => err.name === "InvalidTxData" && /32 bytes/.test(err.message) && /hash/.test(err.message),
+    );
+  });
 });
 
 describe("selector tables", () => {

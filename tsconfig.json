@@ -3,6 +3,7 @@
     "outDir": "lib",
     "rootDir": "src",
     "target": "es2022",
+    "useDefineForClassFields": false,
     "module": "node20",
     "moduleResolution": "node16",
     "esModuleInterop": true,

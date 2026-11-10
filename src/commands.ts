@@ -33,7 +33,7 @@ const malformed = (command: string, response: any, expected: number) =>
 
 const remapTransactionRelatedErrors = (e: any) => {
   if (e && e.statusCode === 0x6a80) {
-    return new InvalidTxData("Invalid Transaction Data");
+    return new InvalidTxData("Invalid transaction data (0x6a80)", { statusCode: e.statusCode }, { cause: e });
   }
 
   return e;
@@ -159,8 +159,6 @@ export default class Commands {
 
     let v = "";
 
-    // EIP-155: v = 2 * chainId + 35 + parity. Chain IDs that need more than one byte
-    // cannot be reported in the single leading byte, and are handled separately below.
     if (chainId * 2n + 35n + 1n > 255n) {
       const oneByteChainId = (chainIdTruncated * 2 + 35) % 256;
       const ecc_parity = Math.abs(response_byte - oneByteChainId);

@@ -15,6 +15,7 @@
  *  limitations under the License.
  ********************************************************************************/
 import { encode, decode } from "@ethersproject/rlp";
+import { InvalidTxData } from "./errors";
 
 export const splitPath = (path: string): number[] => {
   const components = path.split("/");
@@ -42,10 +43,11 @@ export const splitPath = (path: string): number[] => {
 }
 
 export const hexBuffer = (str: string): Buffer => {
-  const hex = str.startsWith("0x") ? str.slice(2) : str;
+  const trimmed = str.trim();
+  const hex = trimmed.startsWith("0x") ? trimmed.slice(2) : trimmed;
 
   if (!/^[0-9a-fA-F]*$/.test(hex) || hex.length % 2 !== 0) {
-    throw new Error(`Invalid hex string "${str}"`);
+    throw new Error(`Invalid hex string: "${hex.length > 24 ? hex.slice(0, 24) + "\u2026" : hex}"`);
   }
 
   return Buffer.from(hex, "hex");
@@ -55,6 +57,12 @@ export const decodeTxInfo = (rawTx: Buffer) : any => {
   const VALID_TYPES = [1, 2];
   const firstByte = rawTx[0] ?? 0;
   const txType = VALID_TYPES.includes(firstByte) ? firstByte : null;
+  if (txType === null && firstByte < 0xc0) {
+    throw new InvalidTxData(
+      `rawTx is not a transaction: ${rawTx.length} bytes starting 0x${firstByte.toString(16).padStart(2, "0")}` +
+      (rawTx.length === 32 ? " (a hash, not a raw tx)" : ""),
+    );
+  }
   const rlpData = txType === null ? rawTx : rawTx.subarray(1);
   const rlpTx = decode(rlpData).map((hex: any) => Buffer.from(hex.slice(2), "hex"));
   let chainIdTruncated = 0;
@@ -88,7 +96,6 @@ export const decodeTxInfo = (rawTx: Buffer) : any => {
   const chainIdSrc = decodedTx.chainId;
   let chainId = 0n;
   if (chainIdSrc) {
-    // BigInt because a chain ID can be any uint256, far past Number's 53-bit safe range.
     if (chainIdSrc.length > 0) {
       chainId = BigInt("0x" + chainIdSrc.toString("hex"));
     }
