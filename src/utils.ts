@@ -106,17 +106,11 @@ export const decodeTxInfo = (rawTx: Buffer) : any => {
 
     vrsOffset = rawTx.length - (rlpVrs.length - 1);
 
-    // First byte > 0xf7 means the length of the list length doesn't fit in a single byte.
     const rlpVrsFirst = rlpVrs[0] ?? 0;
 
     if (rlpVrsFirst > 0xf7) {
-      // Increment vrsOffset to account for that extra byte.
       vrsOffset++;
-
-      // Compute size of the list length.
       const sizeOfListLen = rlpVrsFirst - 0xf7;
-
-      // Increase rlpOffset by the size of the list length.
       vrsOffset += sizeOfListLen - 1;
     }
   }
