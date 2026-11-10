@@ -16,14 +16,24 @@
  ********************************************************************************/
 import type Transport from "./transport";
 import { log } from "./logs";
-import { decodeTxInfo, splitPath } from "./utils";
-import { InvalidTxData } from "./errors";
+import { decodeTxInfo, hexBuffer, splitPath } from "./utils";
+import { InvalidTxData, TransportError } from "./errors";
 
 export * from "./utils";
 
+const STATUS_WORD_BYTES = 2;
+const APP_CONFIG_BYTES = 56 + STATUS_WORD_BYTES;
+const APP_CONFIG_EXTENDED_BYTES = APP_CONFIG_BYTES + 2;
+
+const malformed = (command: string, response: any, expected: number) =>
+  new TransportError(
+    `Malformed ${command} response (${response ? response.length + " bytes" : "no reply"}, expected ${expected})`,
+    "InvalidResponse",
+  );
+
 const remapTransactionRelatedErrors = (e: any) => {
   if (e && e.statusCode === 0x6a80) {
-    return new InvalidTxData("Invalid Transaction Data");
+    return new InvalidTxData("Invalid transaction data (0x6a80)", { statusCode: e.statusCode }, { cause: e });
   }
 
   return e;
@@ -66,19 +76,30 @@ export default class Commands {
     });
 
     try {
-      let response = await this.transport.send(0xe0, 0x02, 0x00, boolChaincode ? 0x01 : 0x00, buffer);
-      const fingerprintLength = response[0];
-      const publicKeyLength = response[1 + fingerprintLength];
-      const chainLength = response[2 + fingerprintLength + publicKeyLength];
+      const response = await this.transport.send(0xe0, 0x02, 0x00, boolChaincode ? 0x01 : 0x00, buffer);
 
-      const publicKeyPosition = 2 + fingerprintLength;
-      const chainCodePosition = 3 + fingerprintLength + publicKeyLength;
+      const fingerprintLength = response[0] ?? 0;
+      const publicKeyLength = response[1 + fingerprintLength] ?? 0;
+      const keyEnd = 2 + fingerprintLength + publicKeyLength;
+      const hasChainCode = boolChaincode || response.length > keyEnd + STATUS_WORD_BYTES;
+      const chainCodeLength = hasChainCode ? response[keyEnd] ?? 0 : 0;
+      const expectedLength = keyEnd + (hasChainCode ? 1 + chainCodeLength : 0) + STATUS_WORD_BYTES;
+
+      if (response.length !== expectedLength) {
+        throw malformed("getPublicKey", response, expectedLength);
+      }
+
+      const fingerprint = response.subarray(1, 1 + fingerprintLength).toString("hex");
+      const publicKey = response.subarray(2 + fingerprintLength, keyEnd).toString("hex");
+      if (!boolChaincode) {
+        return { fingerprint, publicKey };
+      }
 
       return {
-        fingerprint: response.subarray(1, 1 + fingerprintLength).toString("hex"), 
-        publicKey: response.subarray(publicKeyPosition, publicKeyPosition + publicKeyLength).toString("hex"),
-        chainCode: boolChaincode ? response.subarray(chainCodePosition, chainCodePosition + chainLength).toString("hex") : undefined
-      }
+        fingerprint,
+        publicKey,
+        chainCode: response.subarray(keyEnd + 1, keyEnd + 1 + chainCodeLength).toString("hex"),
+      };
     } catch (error) {
       log("error", "Couldn't get public key", error);
       throw error;
@@ -93,12 +114,14 @@ export default class Commands {
    * @return an object with s, v and r
    *
    * @example
-   const tx = "e8018504e3b292008252089428ee52a8f3d6e5d15f8b131996950d7f296c7952872bd72a2487400080"; // raw tx to sign
+   const tx = "eb008504a817c8008252089428ee52a8f3d6e5d15f8b131996950d7f296c795287038d7ea4c6800080018080"; // unsigned EIP-155 tx
    const resp = await cmd.signEthTransaction("44'/60'/0'/0/0", tx);
    console.log(resp);
+
+   const typed = "02f20100843b9aca008504a817c8008252089428ee52a8f3d6e5d15f8b131996950d7f296c795287038d7ea4c6800080c0808080"; // unsigned EIP-1559 tx
    */
   async signEthTransaction(path: string, rawTxHex: string): Promise<{s: string; v: string;  r: string;}> {
-    const rawTx = Buffer.from(rawTxHex, "hex");
+    const rawTx = hexBuffer(rawTxHex);
     const { vrsOffset, txType, chainId, chainIdTruncated } = decodeTxInfo(rawTx);
     const paths = splitPath(path);
 
@@ -138,7 +161,7 @@ export default class Commands {
 
     let v = "";
 
-    if (chainId.times(2).plus(35).plus(1).isGreaterThan(255)) {
+    if (chainId * 2n + 35n + 1n > 255n) {
       const oneByteChainId = (chainIdTruncated * 2 + 35) % 256;
       const ecc_parity = Math.abs(response_byte - oneByteChainId);
 
@@ -147,7 +170,7 @@ export default class Commands {
         v = ecc_parity % 2 == 1 ? "00" : "01";
       } else {
         // Legacy type transaction with a big chain ID
-        v = chainId.times(2).plus(35).plus(ecc_parity).toString(16);
+        v = (chainId * 2n + 35n + BigInt(ecc_parity)).toString(16);
       }
     } else {
       v = response_byte.toString(16);
@@ -177,15 +200,23 @@ export default class Commands {
   console.log(publicKey);
   *
   */
-  async getAppConfiguration() : Promise<{ fwVersion: string; dbVersion: number; serialNumber: string; publicKey: string }> {
+  async getAppConfiguration() : Promise<{ fwVersion: string; dbVersion: number; serialNumber: string; publicKey: string; fwVariant?: number; fwBeta?: number }> {
     try {
       const response = await this.transport.send(0xe0, 0x06, 0x00, 0x00);
+      if (response.length !== APP_CONFIG_BYTES && response.length !== APP_CONFIG_EXTENDED_BYTES) {
+        throw malformed("getAppConfiguration", response, APP_CONFIG_BYTES);
+      }
+
+      const extended = response.length === APP_CONFIG_EXTENDED_BYTES;
+
       const fwVersion = String(response[0]) + "." + String(response[1]) + "." + String(response[2]);
-      const dbVersion = (response[3] << 24) | (response[4] << 16) | (response[5] << 8) | response[6];
+      const dbVersion = response.readUInt32BE(3);
       const serialNumber = response.subarray(7, 23).toString("hex");
       const publicKey = response.subarray(23, 56).toString("hex");
 
-      return { fwVersion, dbVersion, serialNumber, publicKey }
+      return extended
+        ? { fwVersion, dbVersion, serialNumber, publicKey, fwVariant: response.readUInt8(56), fwBeta: response.readUInt8(57) }
+        : { fwVersion, dbVersion, serialNumber, publicKey };
     } catch (error) {
       log("error", "Couldn't get app configuration", error);
       throw error;
@@ -199,7 +230,7 @@ export default class Commands {
     let offset = 0;
     let response: any;
 
-    while (offset !== message.length) {
+    do {
       const maxChunkSize = offset === 0 ? 255 - 1 - paths.length * 4 - 4 : 255;
       const chunkSize = offset + maxChunkSize > message.length ? message.length - offset : maxChunkSize;
       const buffer = Buffer.alloc(offset === 0 ? 1 + paths.length * 4 + 4 + chunkSize : chunkSize);
@@ -218,7 +249,7 @@ export default class Commands {
       response = await this.transport.send(cla, ins, offset === 0 ? 0x00 : 0x80, p2, buffer);
 
       offset += chunkSize;
-    }
+    } while (offset !== message.length);
 
     const v = response[0];
     const r = response.subarray(1, 33).toString("hex");

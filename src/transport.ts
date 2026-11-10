@@ -24,6 +24,7 @@ import { LocalTracer } from "./logs";
 const DEFAULT_LOG_TYPE = "transport";
 const GET_RESPONSE_INS = 0xc0;
 const GET_RESPONSE_CODE = 0x6100;
+const MAX_GET_RESPONSE_CHUNKS = 256;
 
 /**
  * The Transport class defines a generic interface for communicating with a Shell hardware wallet.
@@ -34,6 +35,7 @@ export default class Transport {
   exchangeTimeout = 30000;
   unresponsiveTimeout = 15000;
   exchangeBusyPromise: Promise<void> | null | undefined;
+  sendQueue: Promise<unknown> = Promise.resolve();
   tracer: LocalTracer;
 
   constructor({ context, logType }: { context?: TraceContext; logType?: LogType } = {}) {
@@ -187,28 +189,44 @@ export default class Transport {
    * @param {Array<number>} statusList - A list of acceptable status codes for the response. Defaults to [StatusCodes.OK].
    * @returns {Promise<Buffer>} A promise that resolves with the response data from the device.
    */
-  send = async ( cla: number, ins: number, p1: number, p2: number, data: Buffer = Buffer.alloc(0), statusList: Array<number> = [StatusCodes.OK]): Promise<Buffer> => {
+  send = (cla: number, ins: number, p1: number, p2: number, data: Buffer = Buffer.alloc(0), statusList: Array<number> = [StatusCodes.OK]): Promise<Buffer> => {
     if (data.length >= 256) {
-      throw new TransportError(
-        "data.length exceed 256 bytes limit. Got: " + data.length,
-        "DataLengthTooBig",
+      return Promise.reject(
+        new TransportError(
+          "data.length exceed 256 bytes limit. Got: " + data.length,
+          "DataLengthTooBig",
+        ),
       );
     }
 
-    let response = await this.exchange(Buffer.concat([Buffer.from([cla, ins, p1, p2]), Buffer.from([data.length]), data]));
-    let sw = response.readUInt16BE(response.length - 2);
-    
-    while((sw & 0xFF00) == GET_RESPONSE_CODE)  {
+    const run = this.sendQueue.then(async () => {
+      let response = await this.exchange(Buffer.concat([Buffer.from([cla, ins, p1, p2]), Buffer.from([data.length]), data]));
+      let sw = response.readUInt16BE(response.length - 2);
+      let chunks = 0;
+
+      while((sw & 0xFF00) == GET_RESPONSE_CODE)  {
+        if (++chunks > MAX_GET_RESPONSE_CHUNKS) {
+          throw new TransportError(
+            "GET RESPONSE limit exceeded (" + chunks + " chunks)",
+            "GetResponseLimit",
+          );
+        }
+
         let tmp = await this.exchange(Buffer.from([cla, GET_RESPONSE_INS, 0, 0, 0]));
         sw = tmp.readUInt16BE(tmp.length - 2);
         response = Buffer.concat([response.subarray(0, -2), tmp]);
-    }
+      }
 
-    if (!statusList.some(s => s === sw)) {
-      throw new TransportStatusError(sw);
-    }
+      if (!statusList.some(s => s === sw)) {
+        throw new TransportStatusError(sw);
+      }
 
-    return response;
+      return response;
+    });
+
+    this.sendQueue = run.catch(() => {});
+
+    return run;
   }
 
   /**
@@ -221,31 +239,61 @@ export default class Transport {
   static create(openTimeout = 3000, listenTimeout?: number): Promise<Transport> {
     return new Promise((resolve, reject) => {
       let found = false;
-      const sub = this.listen({
+      let settled = false;
+      let released = false;
+      let listenTimeoutId: ReturnType<typeof setTimeout> | undefined;
+      let sub: TransportTypes.Subscription | undefined;
+
+      const releaseSubscription = () => {
+        if (released || !sub) return;
+        released = true;
+        sub.unsubscribe();
+      };
+
+      const clearListenTimeout = () => {
+        if (listenTimeoutId !== undefined) {
+          clearTimeout(listenTimeoutId);
+          listenTimeoutId = undefined;
+        }
+      };
+
+      const stopListening = () => {
+        settled = true;
+        clearListenTimeout();
+        releaseSubscription();
+      };
+
+     if (listenTimeout) {
+        listenTimeoutId = setTimeout(() => {
+          if (settled) return;
+          stopListening();
+          reject(new TransportError(this.ErrorMessage_ListenTimeout, "ListenTimeout"));
+        }, listenTimeout);
+      }
+
+      sub = this.listen({
         next: e => {
+          if (settled) return;
           found = true;
-          if (sub) sub.unsubscribe();
-          if (listenTimeoutId) clearTimeout(listenTimeoutId);
+          stopListening();
           this.open(e.descriptor, openTimeout).then(resolve, reject);
         },
         error: e => {
-          if (listenTimeoutId) clearTimeout(listenTimeoutId);
+          if (settled) return;
+          settled = true;
+          clearListenTimeout();
           reject(e);
         },
         complete: () => {
-          if (listenTimeoutId) clearTimeout(listenTimeoutId);
+          clearListenTimeout();
 
-          if (!found) {
+          if (!settled && !found) {
             reject(new TransportError(this.ErrorMessage_NoDeviceFound, "NoDeviceFound"));
           }
         },
       });
-      const listenTimeoutId = listenTimeout
-        ? setTimeout(() => {
-            sub.unsubscribe();
-            reject(new TransportError(this.ErrorMessage_ListenTimeout, "ListenTimeout"));
-          }, listenTimeout)
-        : null;
+
+      if (found || settled) releaseSubscription();
     });
   }
 

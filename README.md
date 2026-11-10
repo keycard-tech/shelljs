@@ -61,7 +61,7 @@ const cmd = new ShellJS.Commands(transport);
 
 #### getPublicKey
 
-get public key for a given BIP 32 path.
+get the public key and the master fingerprint for a given BIP 32 path.
 
 ##### Parameters
 
@@ -72,10 +72,10 @@ get public key for a given BIP 32 path.
 
 ```javascript
 const resp = await cmd.getPublicKey("44'/60'/0'/0/0");
-console.log(resp.address);
+console.log(resp.publicKey);
 ```
 
-Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{publicKey: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), address: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), chainCode: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)?}>** an object with a publicKey, address and (optionally) chainCode
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{fingerprint: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), publicKey: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), chainCode: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)?}>** an object with the master fingerprint, the public key of the account and (optionally) the chain code
 
 #### signEthTransaction
 
@@ -84,33 +84,35 @@ sign a transaction and retrieve v, r, s given the raw transaction and the BIP 32
 ##### Parameters
 
 *   `path` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** : the BIP32 path to sign the transaction on
-*   `rawTxHex` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** : the raw ethereum transaction in hexadecimal to sign
+*   `rawTxHex` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** : the raw ethereum transaction in hexadecimal to sign, with or without the 0x prefix
 
 ##### Examples
 
 ```javascript
-const tx = "e8018504e3b292008252089428ee52a8f3d6e5d15f8b131996950d7f296c7952872bd72a2487400080"; // raw tx to sign
+const tx = "eb008504a817c8008252089428ee52a8f3d6e5d15f8b131996950d7f296c795287038d7ea4c6800080018080"; // unsigned EIP-155 tx
 const resp = cmd.signEthTransaction("44'/60'/0'/0/0", tx);
 console.log(resp);
+
+const typed = "02f20100843b9aca008504a817c8008252089428ee52a8f3d6e5d15f8b131996950d7f296c795287038d7ea4c6800080c0808080"; // unsigned EIP-1559 tx
 ```
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{s: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), v: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), r: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)}>**
 
 #### getAppConfiguration
 
-get firmware and database version installed on device, Keycard Shell serial number and public key.
+get firmware and database version installed on device, Keycard Shell serial number and public key, and, on firmware that reports them, the firmware variant and beta number.
 
 ##### Examples
 
 ```javascript
-const {fwVersion, dbVersion, serialNumber, publicKey} = await cmd.getAppConfiguration();
+const {fwVersion, dbVersion, serialNumber, publicKey, fwVariant, fwBeta} = await cmd.getAppConfiguration();
 console.log(fwVersion);
 console.log(dbVersion);
 console.log(serialNumber);
 console.log(publicKey);
 ```
 
-Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{fwVersion: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), dbVersion: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number), serialNumber: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), publicKey: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)}>**
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)<{fwVersion: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), dbVersion: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number), serialNumber: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), publicKey: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), fwVariant: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)?, fwBeta: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)?}>** an object with the app version, the database version, the device serial number, the device public key and, on firmware that reports them, the firmware variant and beta number
 
 #### signPSBT
 

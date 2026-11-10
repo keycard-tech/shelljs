@@ -1,21 +1,29 @@
 {
   "compilerOptions": {
     "outDir": "lib",
-    "lib": ["ES2017", "ES6", "dom"],
-    "sourceMap": true,
-    "declaration": true,
-    "allowSyntheticDefaultImports": true,
+    "rootDir": "src",
+    "target": "es2022",
+    "useDefineForClassFields": false,
+    "module": "node20",
+    "moduleResolution": "node16",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-    "moduleResolution": "node",
-    "pretty": true,
     "resolveJsonModule": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "declaration": true,
+    "forceConsistentCasingInFileNames": true,
+    "pretty": true,
     "skipLibCheck": true,
     "strict": true,
-    "downlevelIteration": true
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": false,
+    "noUnusedLocals": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "isolatedModules": true,
+    "types": ["node"]
   },
   "include": [
     "src/**/*.ts"
-  ],
+  ]
 }

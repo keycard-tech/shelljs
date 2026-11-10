@@ -106,6 +106,8 @@ export const hidFraming = (channel: number, packetSize: number) :
       if (acc && acc.dataLength === acc.data.length) {
         return acc.data;
       }
+
+      return undefined;
     },
   };
 };

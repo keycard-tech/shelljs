@@ -73,7 +73,7 @@ export class TransportError extends Error {
     super(message || name);
     this.name = name;
     this.message = message;
-    this.stack = new Error(message).stack;
+    this.stack = new Error(message).stack!;
     this.id = id;
   }
 }
@@ -143,6 +143,8 @@ export const getAltStatusMessage = (code: number): string | undefined | null => 
   if (0x6f00 <= code && code <= 0x6fff) {
     return "Internal error, please report";
   }
+
+  return undefined;
 }
 
 /**
@@ -167,7 +169,7 @@ export class TransportStatusError extends Error {
     super(message);
     this.name = "TransportStatusError";
     this.message = message;
-    this.stack = new Error(message).stack;
+    this.stack = new Error(message).stack!;
     this.statusCode = statusCode;
     this.statusText = statusText;
   }
