@@ -15,7 +15,6 @@
  *  limitations under the License.
  ********************************************************************************/
 import { encode, decode } from "@ethersproject/rlp";
-import { BigNumber } from "bignumber.js";
 
 export const splitPath = (path: string): number[] => {
   const components = path.split("/");
@@ -87,10 +86,12 @@ export const decodeTxInfo = (rawTx: Buffer) : any => {
   }
 
   const chainIdSrc = decodedTx.chainId;
-  let chainId = new BigNumber(0);
+  let chainId = 0n;
   if (chainIdSrc) {
-    // Using BigNumber because chainID could be any uint256.
-    chainId = new BigNumber(chainIdSrc.toString("hex"), 16);
+    // BigInt because a chain ID can be any uint256, far past Number's 53-bit safe range.
+    if (chainIdSrc.length > 0) {
+      chainId = BigInt("0x" + chainIdSrc.toString("hex"));
+    }
     const chainIdTruncatedBuf = Buffer.alloc(4);
     if (chainIdSrc.length > 4) {
       chainIdSrc.copy(chainIdTruncatedBuf);

@@ -159,7 +159,9 @@ export default class Commands {
 
     let v = "";
 
-    if (chainId.times(2).plus(35).plus(1).isGreaterThan(255)) {
+    // EIP-155: v = 2 * chainId + 35 + parity. Chain IDs that need more than one byte
+    // cannot be reported in the single leading byte, and are handled separately below.
+    if (chainId * 2n + 35n + 1n > 255n) {
       const oneByteChainId = (chainIdTruncated * 2 + 35) % 256;
       const ecc_parity = Math.abs(response_byte - oneByteChainId);
 
@@ -168,7 +170,7 @@ export default class Commands {
         v = ecc_parity % 2 == 1 ? "00" : "01";
       } else {
         // Legacy type transaction with a big chain ID
-        v = chainId.times(2).plus(35).plus(ecc_parity).toString(16);
+        v = (chainId * 2n + 35n + BigInt(ecc_parity)).toString(16);
       }
     } else {
       v = response_byte.toString(16);
